@@ -1,14 +1,12 @@
 mod file;
 
-use dirs;
 use file::Status;
 use hotwatch::blocking::{Flow, Hotwatch};
 use hotwatch::Event;
-use std::path::PathBuf;
 use std::time::Duration;
 
 pub fn run() {
-    let status_file_path = status_file_path();
+    let status_file_path = file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
 
     let mut current_status = Status::from_file(&status_file_path);
@@ -35,10 +33,4 @@ pub fn run() {
         .expect("Failed to watch status file");
 
     hotwatch.run();
-}
-
-fn status_file_path() -> PathBuf {
-    dirs::home_dir()
-        .expect("Can't find user home directory")
-        .join(r#"Saved Games\Frontier Developments\Elite Dangerous\Status.json"#)
 }

@@ -2,6 +2,12 @@ use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
 
+pub fn status_file_path() -> PathBuf {
+    dirs::home_dir()
+        .expect("Can't find user home directory")
+        .join(r#"Saved Games\Frontier Developments\Elite Dangerous\Status.json"#)
+}
+
 #[derive(Deserialize, Eq, PartialEq)]
 pub struct Status {
     #[serde(rename = "Flags")]
