@@ -4,7 +4,6 @@ use dirs;
 use file::Status;
 use hotwatch::blocking::{Flow, Hotwatch};
 use hotwatch::Event;
-use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -19,9 +18,7 @@ pub fn run() {
         .watch(status_file_path, |event: Event| {
             if let Event::Write(path) = event {
                 println!("{:?} has changed", path);
-                let json_status = fs::read_to_string(path).expect("Could not read status file");
-                println!("JSON: {}", json_status);
-                let file_status = Status::from_json(json_status);
+                let file_status = Status::from_file(path);
                 println!("Flags: {}", file_status.flags);
             }
             Flow::Continue
