@@ -15,12 +15,22 @@ pub struct Status {
 }
 
 impl Status {
-    pub fn from_file(path: &PathBuf) -> Status {
-        Status::from_json(fs::read_to_string(path).expect("Could not read status file"))
+    // Returns the status in the given file. Returns an Option because the file cannot be
+    // guaranteed to contain a readable status at all times.
+    pub fn from_file(path: &PathBuf) -> Option<Status> {
+        let json = fs::read_to_string(path).expect("Could not read status file");
+
+        // When exiting the game temporarily writes an empty file.
+        if json == "" {
+            println!("Status file empty");
+            None
+        } else {
+            Some(Status::from_json(json))
+        }
     }
 
     pub fn from_json(json: String) -> Status {
-        println!("{}", json);
+        println!("Parsing JSON: {}", json);
         serde_json::from_str(&json).expect("Could not parse status JSON")
     }
 }
