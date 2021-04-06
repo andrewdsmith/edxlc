@@ -1,14 +1,13 @@
-mod file;
 mod game;
 
-use file::Status;
+use game::file::Status;
 use game::Ship;
 use hotwatch::blocking::{Flow, Hotwatch};
 use hotwatch::Event;
 use std::time::Duration;
 
 pub fn run() {
-    let status_file_path = file::status_file_path();
+    let status_file_path = game::file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
 
     let initial_status =

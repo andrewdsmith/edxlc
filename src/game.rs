@@ -1,4 +1,6 @@
-use crate::file::Status;
+pub mod file;
+
+use file::Status;
 
 pub struct Ship {
     status_flags: u32,
