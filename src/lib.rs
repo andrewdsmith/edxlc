@@ -1,12 +1,17 @@
 mod game;
+mod x52pro;
 
 use game::file::Status;
 use game::Ship;
 use hotwatch::blocking::{Flow, Hotwatch};
 use hotwatch::Event;
 use std::time::Duration;
+use x52pro::DirectOutput;
 
 pub fn run() {
+    let direct_output = DirectOutput::load();
+    direct_output.initialize();
+
     let status_file_path = game::file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
 

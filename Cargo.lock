@@ -96,8 +96,10 @@ version = "1.0.0"
 dependencies = [
  "dirs",
  "hotwatch",
+ "libloading",
  "serde",
  "serde_json",
+ "winapi 0.3.9",
 ]
 
 [[package]]
@@ -230,6 +232,16 @@ name = "libc"
 version = "0.2.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8916b1f6ca17130ec6568feccee27c156ad12037880833a3b842a823236502e7"
+
+[[package]]
+name = "libloading"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f84d96438c15fcd6c3f244c8fce01d1e2b9c6b5623e9c711dc9286d8fc92d6a"
+dependencies = [
+ "cfg-if 1.0.0",
+ "winapi 0.3.9",
+]
 
 [[package]]
 name = "log"
