@@ -1,3 +1,4 @@
+use libc::c_void;
 use libloading::{Library, Symbol};
 use std::ffi::OsStr;
 use std::iter::once;
@@ -7,16 +8,26 @@ use winapi::um::winnt::HRESULT;
 
 type DirectOutputInitializeFn = unsafe extern "C" fn(wszPluginName: *const wchar_t) -> HRESULT;
 
+type DirectOutputEnumerateFn = unsafe extern "C" fn(
+    pfnCb: DirectOutputEnumerateCallbackFn,
+    pCtxt: &mut DirectOutput,
+) -> HRESULT;
+type DirectOutputEnumerateCallbackFn =
+    extern "C" fn(hDevice: DirectOutputDeviceHandle, pCtxt: &mut DirectOutput);
+type DirectOutputDeviceHandle = *const c_void;
+
 const PLUGIN_NAME: &str = "EDXLC";
 
 pub struct DirectOutput {
     library: Library,
+    device: DirectOutputDeviceHandle,
 }
 
 impl DirectOutput {
     pub fn load() -> DirectOutput {
         DirectOutput {
             library: DirectOutput::load_library(),
+            device: std::ptr::null(),
         }
     }
 
@@ -36,6 +47,24 @@ impl DirectOutput {
 
             if result != 0 {
                 panic!("Could not initialize the DirectOutput library");
+            }
+        }
+    }
+
+    pub fn enumerate(&mut self) {
+        extern "C" fn callback(device: DirectOutputDeviceHandle, target: &mut DirectOutput) {
+            println!("DirectOutput_Enumerate device = {:?}", device);
+            target.device = device;
+        }
+
+        unsafe {
+            let enumerate_fn =
+                self.load_library_function::<DirectOutputEnumerateFn>(b"DirectOutput_Enumerate");
+            let result = enumerate_fn(callback, self);
+            println!("DirectOutput_Enumerate result = {:?}", result);
+
+            if result != 0 {
+                panic!("Could not enumerate dervices with DirectOutput");
             }
         }
     }

@@ -9,8 +9,9 @@ use std::time::Duration;
 use x52pro::DirectOutput;
 
 pub fn run() {
-    let direct_output = DirectOutput::load();
+    let mut direct_output = DirectOutput::load();
     direct_output.initialize();
+    direct_output.enumerate();
 
     let status_file_path = game::file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
