@@ -4,19 +4,35 @@ use std::ffi::OsStr;
 use std::iter::once;
 use std::os::windows::ffi::OsStrExt;
 use winapi::ctypes::wchar_t;
+use winapi::shared::minwindef::DWORD;
 use winapi::um::winnt::HRESULT;
 
-type DirectOutputInitializeFn = unsafe extern "C" fn(wszPluginName: *const wchar_t) -> HRESULT;
+type DirectOutputDeviceHandle = *const c_void;
 
+type DirectOutputInitializeFn = unsafe extern "C" fn(wszPluginName: *const wchar_t) -> HRESULT;
 type DirectOutputEnumerateFn = unsafe extern "C" fn(
     pfnCb: DirectOutputEnumerateCallbackFn,
     pCtxt: &mut DirectOutput,
 ) -> HRESULT;
 type DirectOutputEnumerateCallbackFn =
     extern "C" fn(hDevice: DirectOutputDeviceHandle, pCtxt: &mut DirectOutput);
-type DirectOutputDeviceHandle = *const c_void;
+type DirectOutputAddPageFn = unsafe extern "C" fn(
+    hDevice: DirectOutputDeviceHandle,
+    dwPage: DWORD,
+    wszDebugName: *const wchar_t,
+    dwFlags: DWORD,
+) -> HRESULT;
+type DirectOutputSetLedFn = unsafe extern "C" fn(
+    hDevice: DirectOutputDeviceHandle,
+    dwPage: DWORD,
+    dwIndex: DWORD,
+    dwValue: DWORD,
+) -> HRESULT;
+
+const FLAG_SET_AS_ACTIVE: DWORD = 1;
 
 const PLUGIN_NAME: &str = "EDXLC";
+const PAGE_ID: DWORD = 1;
 
 pub struct DirectOutput {
     library: Library,
@@ -65,6 +81,39 @@ impl DirectOutput {
 
             if result != 0 {
                 panic!("Could not enumerate dervices with DirectOutput");
+            }
+        }
+    }
+
+    pub fn add_page(&self) {
+        // Despite what the SDK documentation says, we have to pass in a non-null debug
+        // name or later calls fail with an error indicating the page is not active.
+        let debug_name = DirectOutput::win32_string(PLUGIN_NAME).as_ptr();
+
+        unsafe {
+            let add_page_fn =
+                self.load_library_function::<DirectOutputAddPageFn>(b"DirectOutput_AddPage");
+            let result = add_page_fn(self.device, PAGE_ID, debug_name, FLAG_SET_AS_ACTIVE);
+            println!("DirectOutput_AddPage result = {:?}", result);
+
+            if result != 0 {
+                panic!("Could not add page with DirectOutput");
+            }
+        }
+    }
+
+    pub fn set_led(&self, id: u32, active: bool) {
+        let value = if active { 1 } else { 0 };
+
+        unsafe {
+            // We should not be re-loading this function symbol on every call.
+            let set_led_fn =
+                self.load_library_function::<DirectOutputSetLedFn>(b"DirectOutput_SetLed");
+            let result = set_led_fn(self.device, PAGE_ID, id, value);
+            println!("DirectOutput_SetLed result = {:?}", result);
+
+            if result != 0 {
+                panic!("Could not set LED with DirectOutput");
             }
         }
     }

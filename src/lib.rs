@@ -12,6 +12,11 @@ pub fn run() {
     let mut direct_output = DirectOutput::load();
     direct_output.initialize();
     direct_output.enumerate();
+    direct_output.add_page();
+
+    // Set LED red initially until the first update in status.
+    direct_output.set_led(9, true);
+    direct_output.set_led(10, false);
 
     let status_file_path = game::file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
@@ -30,6 +35,14 @@ pub fn run() {
                 if let Some(status) = Status::from_file(&path) {
                     if ship.update_status(status) {
                         println!("Landing gear deployed: {}", ship.landing_gear_deployed());
+
+                        if ship.landing_gear_deployed() {
+                            direct_output.set_led(9, true);
+                            direct_output.set_led(10, true);
+                        } else {
+                            direct_output.set_led(9, false);
+                            direct_output.set_led(10, true);
+                        }
                     } else {
                         println!("Status file updated but change not relevant")
                     }
