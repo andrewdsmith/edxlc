@@ -1,14 +1,18 @@
+mod events;
 mod game;
 mod x52pro;
 
+use events::Event;
 use game::file::Status;
 use game::Ship;
-use hotwatch::{Event, Hotwatch};
+use hotwatch::Hotwatch;
 use std::sync::mpsc;
 use std::time::Duration;
 use x52pro::DirectOutput;
 
 pub fn run() {
+    println!("Press Ctrl+C to exit");
+
     let mut direct_output = DirectOutput::load();
     direct_output.initialize();
     direct_output.enumerate();
@@ -26,33 +30,46 @@ pub fn run() {
 
     let mut ship = Ship::from_status(initial_status);
     let (tx, rx) = mpsc::channel();
+    let tx2 = tx.clone();
     let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
         .expect("File watcher failed to initialize");
 
     hotwatch
-        .watch(status_file_path, move |event: Event| {
-            if let Event::Write(path) = event {
+        .watch(status_file_path, move |event: hotwatch::Event| {
+            if let hotwatch::Event::Write(path) = event {
                 if let Some(status) = Status::from_file(&path) {
-                    tx.send(status)
+                    tx.send(Event::StatusUpdate(status))
                         .expect("Could not send status update message");
                 }
             }
         })
         .expect("Failed to watch status file");
 
-    for status in rx {
-        if ship.update_status(status) {
-            println!("Landing gear deployed: {}", ship.landing_gear_deployed());
+    ctrlc::set_handler(move || {
+        println!("Received Ctrl+C");
+        tx2.send(Event::Exit).expect("Could not send exit message");
+    })
+    .expect("Failed to set Ctrl+C handler");
 
-            if ship.landing_gear_deployed() {
-                direct_output.set_led(9, true);
-                direct_output.set_led(10, true);
-            } else {
-                direct_output.set_led(9, false);
-                direct_output.set_led(10, true);
+    for event in rx {
+        match event {
+            Event::Exit => break,
+            Event::StatusUpdate(status) => {
+                if ship.update_status(status) {
+                    println!("Landing gear deployed: {}", ship.landing_gear_deployed());
+                    if ship.landing_gear_deployed() {
+                        direct_output.set_led(9, true);
+                        direct_output.set_led(10, true);
+                    } else {
+                        direct_output.set_led(9, false);
+                        direct_output.set_led(10, true);
+                    }
+                } else {
+                    println!("Status file updated but change not relevant");
+                }
             }
-        } else {
-            println!("Status file updated but change not relevant");
         }
     }
+
+    println!("Exiting");
 }
