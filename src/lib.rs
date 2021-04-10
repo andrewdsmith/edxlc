@@ -3,8 +3,8 @@ mod x52pro;
 
 use game::file::Status;
 use game::Ship;
-use hotwatch::blocking::{Flow, Hotwatch};
-use hotwatch::Event;
+use hotwatch::{Event, Hotwatch};
+use std::sync::mpsc;
 use std::time::Duration;
 use x52pro::DirectOutput;
 
@@ -25,7 +25,7 @@ pub fn run() {
         Status::from_file(&status_file_path).expect("Could not read current status");
 
     let mut ship = Ship::from_status(initial_status);
-
+    let (tx, rx) = mpsc::channel();
     let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
         .expect("File watcher failed to initialize");
 
@@ -33,24 +33,26 @@ pub fn run() {
         .watch(status_file_path, move |event: Event| {
             if let Event::Write(path) = event {
                 if let Some(status) = Status::from_file(&path) {
-                    if ship.update_status(status) {
-                        println!("Landing gear deployed: {}", ship.landing_gear_deployed());
-
-                        if ship.landing_gear_deployed() {
-                            direct_output.set_led(9, true);
-                            direct_output.set_led(10, true);
-                        } else {
-                            direct_output.set_led(9, false);
-                            direct_output.set_led(10, true);
-                        }
-                    } else {
-                        println!("Status file updated but change not relevant")
-                    }
+                    tx.send(status)
+                        .expect("Could not send status update message");
                 }
             }
-            Flow::Continue
         })
         .expect("Failed to watch status file");
 
-    hotwatch.run();
+    for status in rx {
+        if ship.update_status(status) {
+            println!("Landing gear deployed: {}", ship.landing_gear_deployed());
+
+            if ship.landing_gear_deployed() {
+                direct_output.set_led(9, true);
+                direct_output.set_led(10, true);
+            } else {
+                direct_output.set_led(9, false);
+                direct_output.set_led(10, true);
+            }
+        } else {
+            println!("Status file updated but change not relevant");
+        }
+    }
 }
