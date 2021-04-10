@@ -10,7 +10,10 @@ use std::sync::mpsc;
 use std::time::Duration;
 use x52pro::DirectOutput;
 
+const VERSION: &str = "1.1";
+
 pub fn run() {
+    println!("EDXLC {}", VERSION);
     println!("Press Ctrl+C to exit");
 
     let mut direct_output = DirectOutput::load();
