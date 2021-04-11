@@ -31,12 +31,16 @@ const FLAG_SET_AS_ACTIVE: DWORD = 1;
 const PLUGIN_NAME: &str = "EDXLC";
 const PAGE_ID: DWORD = 1;
 
+/// An instance of a safe wrapper around the Saitek DirectOutput library.
 pub struct DirectOutput {
     library: Library,
     device: DeviceHandle,
 }
 
 impl DirectOutput {
+    /// Returns a new instance of the library loaded from its default
+    /// installation location. Panics is the library cannot be loaded, e.g. not
+    /// installed at the given location.
     pub fn load() -> DirectOutput {
         DirectOutput {
             library: DirectOutput::load_library(),
@@ -51,6 +55,8 @@ impl DirectOutput {
         }
     }
 
+    /// Initializes the underlying library. This must be called before any
+    /// other methods can be called. Panics if the initialization fails.
     pub fn initialize(&self) {
         unsafe {
             let initialize_fn =
@@ -64,6 +70,11 @@ impl DirectOutput {
         }
     }
 
+    /// Enumerates the connected Saitek devices and selects the last given
+    /// device. This wrapper does not give the ability to select a device by
+    /// type or id but could be extended to do so. For the purposes of this
+    /// project it is currently assuming that only X52Pro devices are attached,
+    /// which may not be true in general. Panics if the enumeration fails.
     pub fn enumerate(&mut self) {
         extern "C" fn callback(device: DeviceHandle, target: &mut DirectOutput) {
             println!("DirectOutput_Enumerate device = {:?}", device);
@@ -81,6 +92,10 @@ impl DirectOutput {
         }
     }
 
+    /// Adds a display page to the device. This method must be called after
+    /// `initialize` and before `set_led`. The underlying library supports
+    /// multiple display pages that can be switched between but this wrapper
+    /// creates a single page only. Panics if the addition fails.
     pub fn add_page(&self) {
         // Despite what the SDK documentation says, we have to pass in a non-null debug
         // name or later calls fail with an error indicating the page is not active.
@@ -97,6 +112,9 @@ impl DirectOutput {
         }
     }
 
+    /// Activates or deactives the LED with the given `id` on the joystick. The
+    /// `id` must be between 0 and 19 inclusive for the X52Pro. Panics if
+    /// setting the LED state fails, e.g. if given an invalid `id`.
     pub fn set_led(&self, id: u32, active: bool) {
         let value = if active { 1 } else { 0 };
 
@@ -112,10 +130,14 @@ impl DirectOutput {
         }
     }
 
+    /// Given a function name returns a symbol for that function in the
+    /// DirectOutput library. Panics if the symbol cannot be found.
     unsafe fn load_library_function<T>(&self, function_name: &[u8]) -> Symbol<T> {
         self.library.get(function_name).unwrap()
     }
 
+    /// Given a native string `value` returns a Windows native "wide" string
+    /// suitable for passing to Windows-native code.
     fn win32_string(value: &str) -> Vec<u16> {
         OsStr::new(value).encode_wide().chain(once(0)).collect()
     }
