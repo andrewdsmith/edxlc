@@ -76,6 +76,14 @@ pub fn run() {
                         direct_output.set_led(11, false);
                         direct_output.set_led(12, true);
                     }
+
+                    if ship.external_lights_on() {
+                        direct_output.set_led(13, true);
+                        direct_output.set_led(14, true);
+                    } else {
+                        direct_output.set_led(13, false);
+                        direct_output.set_led(14, true);
+                    }
                 } else {
                     println!("Status file updated but change not relevant");
                 }
