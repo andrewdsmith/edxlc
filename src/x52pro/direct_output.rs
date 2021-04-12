@@ -1,5 +1,5 @@
 use libc::c_void;
-use libloading::{Library, Symbol};
+use libloading::{os::windows::Symbol, Library};
 use std::ffi::OsStr;
 use std::iter::once;
 use std::os::windows::ffi::OsStrExt;
@@ -33,7 +33,15 @@ const PAGE_ID: DWORD = 1;
 
 /// An instance of a safe wrapper around the Saitek DirectOutput library.
 pub struct DirectOutput {
+    // We have to continue to own the Library instance even though we never use
+    // it again so that it is not dropped and hence closed, which would
+    // invalidate the symbols loaded from it we want to use to call functions.
+    #[allow(dead_code)]
     library: Library,
+    initialize_fn: Symbol<InitializeFn>,
+    enumerate_fn: Symbol<EnumerateFn>,
+    add_page_fn: Symbol<AddPageFn>,
+    set_led_fn: Symbol<SetLedFn>,
     device: DeviceHandle,
 }
 
@@ -42,8 +50,18 @@ impl DirectOutput {
     /// installation location. Panics is the library cannot be loaded, e.g. not
     /// installed at the given location.
     pub fn load() -> DirectOutput {
+        let library = DirectOutput::load_library();
+        let initialize_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_Initialize");
+        let enumerate_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_Enumerate");
+        let add_page_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_AddPage");
+        let set_led_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_SetLed");
+
         DirectOutput {
-            library: DirectOutput::load_library(),
+            library,
+            initialize_fn,
+            enumerate_fn,
+            add_page_fn,
+            set_led_fn,
             device: std::ptr::null(),
         }
     }
@@ -55,13 +73,17 @@ impl DirectOutput {
         }
     }
 
+    /// Given a function name returns a symbol for that function in the
+    /// DirectOutput library. Panics if the symbol cannot be found.
+    fn get_library_symbol<T>(library: &Library, symbol: &[u8]) -> Symbol<T> {
+        unsafe { library.get::<T>(symbol).unwrap().into_raw() }
+    }
+
     /// Initializes the underlying library. This must be called before any
     /// other methods can be called. Panics if the initialization fails.
     pub fn initialize(&self) {
         unsafe {
-            let initialize_fn =
-                self.load_library_function::<InitializeFn>(b"DirectOutput_Initialize");
-            let result = initialize_fn(Self::win32_string(PLUGIN_NAME).as_ptr());
+            let result = (self.initialize_fn)(DirectOutput::win32_string(PLUGIN_NAME).as_ptr());
             println!("DirectOutput_Initialize result = {:?}", result);
 
             if result != 0 {
@@ -82,8 +104,7 @@ impl DirectOutput {
         }
 
         unsafe {
-            let enumerate_fn = self.load_library_function::<EnumerateFn>(b"DirectOutput_Enumerate");
-            let result = enumerate_fn(callback, self);
+            let result = (self.enumerate_fn)(callback, self);
             println!("DirectOutput_Enumerate result = {:?}", result);
 
             if result != 0 {
@@ -102,8 +123,7 @@ impl DirectOutput {
         let debug_name = DirectOutput::win32_string(PLUGIN_NAME).as_ptr();
 
         unsafe {
-            let add_page_fn = self.load_library_function::<AddPageFn>(b"DirectOutput_AddPage");
-            let result = add_page_fn(self.device, PAGE_ID, debug_name, FLAG_SET_AS_ACTIVE);
+            let result = (self.add_page_fn)(self.device, PAGE_ID, debug_name, FLAG_SET_AS_ACTIVE);
             println!("DirectOutput_AddPage result = {:?}", result);
 
             if result != 0 {
@@ -119,21 +139,13 @@ impl DirectOutput {
         let value = if active { 1 } else { 0 };
 
         unsafe {
-            // We should not be re-loading this function symbol on every call.
-            let set_led_fn = self.load_library_function::<SetLedFn>(b"DirectOutput_SetLed");
-            let result = set_led_fn(self.device, PAGE_ID, id, value);
+            let result = (self.set_led_fn)(self.device, PAGE_ID, id, value);
             println!("DirectOutput_SetLed result = {:?}", result);
 
             if result != 0 {
                 panic!("Could not set LED with DirectOutput");
             }
         }
-    }
-
-    /// Given a function name returns a symbol for that function in the
-    /// DirectOutput library. Panics if the symbol cannot be found.
-    unsafe fn load_library_function<T>(&self, function_name: &[u8]) -> Symbol<T> {
-        self.library.get(function_name).unwrap()
     }
 
     /// Given a native string `value` returns a Windows native "wide" string
