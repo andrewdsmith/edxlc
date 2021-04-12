@@ -49,14 +49,14 @@ impl DirectOutput {
     /// Returns a new instance of the library loaded from its default
     /// installation location. Panics is the library cannot be loaded, e.g. not
     /// installed at the given location.
-    pub fn load() -> DirectOutput {
-        let library = DirectOutput::load_library();
-        let initialize_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_Initialize");
-        let enumerate_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_Enumerate");
-        let add_page_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_AddPage");
-        let set_led_fn = DirectOutput::get_library_symbol(&library, b"DirectOutput_SetLed");
+    pub fn load() -> Self {
+        let library = Self::load_library();
+        let initialize_fn = Self::get_library_symbol(&library, b"DirectOutput_Initialize");
+        let enumerate_fn = Self::get_library_symbol(&library, b"DirectOutput_Enumerate");
+        let add_page_fn = Self::get_library_symbol(&library, b"DirectOutput_AddPage");
+        let set_led_fn = Self::get_library_symbol(&library, b"DirectOutput_SetLed");
 
-        DirectOutput {
+        Self {
             library,
             initialize_fn,
             enumerate_fn,
@@ -83,7 +83,7 @@ impl DirectOutput {
     /// other methods can be called. Panics if the initialization fails.
     pub fn initialize(&self) {
         unsafe {
-            let result = (self.initialize_fn)(DirectOutput::win32_string(PLUGIN_NAME).as_ptr());
+            let result = (self.initialize_fn)(Self::win32_string(PLUGIN_NAME).as_ptr());
             println!("DirectOutput_Initialize result = {:?}", result);
 
             if result != 0 {
@@ -120,7 +120,7 @@ impl DirectOutput {
     pub fn add_page(&self) {
         // Despite what the SDK documentation says, we have to pass in a non-null debug
         // name or later calls fail with an error indicating the page is not active.
-        let debug_name = DirectOutput::win32_string(PLUGIN_NAME).as_ptr();
+        let debug_name = Self::win32_string(PLUGIN_NAME).as_ptr();
 
         unsafe {
             let result = (self.add_page_fn)(self.device, PAGE_ID, debug_name, FLAG_SET_AS_ACTIVE);
