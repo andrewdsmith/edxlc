@@ -60,12 +60,21 @@ pub fn run() {
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
                     println!("Landing gear deployed: {}", ship.landing_gear_deployed());
+
                     if ship.landing_gear_deployed() {
                         direct_output.set_led(9, true);
                         direct_output.set_led(10, true);
                     } else {
                         direct_output.set_led(9, false);
                         direct_output.set_led(10, true);
+                    }
+
+                    if ship.cargo_scoop_deployed() {
+                        direct_output.set_led(11, true);
+                        direct_output.set_led(12, true);
+                    } else {
+                        direct_output.set_led(11, false);
+                        direct_output.set_led(12, true);
                     }
                 } else {
                     println!("Status file updated but change not relevant");

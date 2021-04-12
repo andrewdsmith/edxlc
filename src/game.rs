@@ -7,16 +7,20 @@ pub struct Ship {
 }
 
 impl Ship {
+    // See: https://elite-journal.readthedocs.io/en/latest/Status%20File/
     const LANDING_GEAR_DEPLOYED: u32 = 1 << 2;
+    const CARGO_SCOOP_DEPLOYED: u32 = 1 << 9;
 
-    pub fn from_status(status: Status) -> Ship {
-        Ship {
-            status_flags: Ship::filtered_status_flags(status.flags),
+    const STATUS_FILTER: u32 = Self::LANDING_GEAR_DEPLOYED | Self::CARGO_SCOOP_DEPLOYED;
+
+    pub fn from_status(status: Status) -> Self {
+        Self {
+            status_flags: Self::filtered_status_flags(status.flags),
         }
     }
 
     pub fn update_status(&mut self, status: Status) -> bool {
-        let updated_status_flags = Ship::filtered_status_flags(status.flags & 4);
+        let updated_status_flags = Self::filtered_status_flags(status.flags);
 
         if self.status_flags == updated_status_flags {
             false
@@ -27,7 +31,11 @@ impl Ship {
     }
 
     pub fn landing_gear_deployed(&self) -> bool {
-        self.is_status_flag_set(Ship::LANDING_GEAR_DEPLOYED)
+        self.is_status_flag_set(Self::LANDING_GEAR_DEPLOYED)
+    }
+
+    pub fn cargo_scoop_deployed(&self) -> bool {
+        self.is_status_flag_set(Self::CARGO_SCOOP_DEPLOYED)
     }
 
     fn is_status_flag_set(&self, flag: u32) -> bool {
@@ -35,6 +43,6 @@ impl Ship {
     }
 
     fn filtered_status_flags(flags: u32) -> u32 {
-        flags & Ship::LANDING_GEAR_DEPLOYED
+        flags & Self::STATUS_FILTER
     }
 }
