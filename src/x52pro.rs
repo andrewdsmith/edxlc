@@ -1,2 +1,3 @@
+pub mod device;
 pub mod direct_output;
-pub use direct_output::DirectOutput;
+pub use device::Device;

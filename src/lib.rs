@@ -8,7 +8,7 @@ use game::Ship;
 use hotwatch::Hotwatch;
 use std::sync::mpsc;
 use std::time::Duration;
-use x52pro::DirectOutput;
+use x52pro::device::{LEDState, LED};
 
 const VERSION: &str = "1.2";
 
@@ -16,14 +16,10 @@ pub fn run() {
     println!("EDXLC {}", VERSION);
     println!("Press Ctrl+C to exit");
 
-    let mut direct_output = DirectOutput::load();
-    direct_output.initialize();
-    direct_output.enumerate();
-    direct_output.add_page();
+    let x52pro = x52pro::Device::new();
 
     // Set LED red initially until the first update in status.
-    direct_output.set_led(9, true);
-    direct_output.set_led(10, false);
+    x52pro.set_led_state(LED::T1T2, LEDState::Red);
 
     let status_file_path = game::file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
@@ -59,31 +55,16 @@ pub fn run() {
             Event::Exit => break,
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
-                    println!("Landing gear deployed: {}", ship.landing_gear_deployed());
-
-                    if ship.landing_gear_deployed() {
-                        direct_output.set_led(9, true);
-                        direct_output.set_led(10, true);
-                    } else {
-                        direct_output.set_led(9, false);
-                        direct_output.set_led(10, true);
+                    fn led_state(state: bool) -> LEDState {
+                        match state {
+                            true => LEDState::Amber,
+                            false => LEDState::Green,
+                        }
                     }
 
-                    if ship.cargo_scoop_deployed() {
-                        direct_output.set_led(11, true);
-                        direct_output.set_led(12, true);
-                    } else {
-                        direct_output.set_led(11, false);
-                        direct_output.set_led(12, true);
-                    }
-
-                    if ship.external_lights_on() {
-                        direct_output.set_led(13, true);
-                        direct_output.set_led(14, true);
-                    } else {
-                        direct_output.set_led(13, false);
-                        direct_output.set_led(14, true);
-                    }
+                    x52pro.set_led_state(LED::T1T2, led_state(ship.landing_gear_deployed()));
+                    x52pro.set_led_state(LED::T3T4, led_state(ship.cargo_scoop_deployed()));
+                    x52pro.set_led_state(LED::T5T6, led_state(ship.external_lights_on()));
                 } else {
                     println!("Status file updated but change not relevant");
                 }
