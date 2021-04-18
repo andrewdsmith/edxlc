@@ -1,6 +1,15 @@
+mod control_bindings;
+
+pub use control_bindings::*;
 use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
+
+pub fn bindings_file_path() -> PathBuf {
+    dirs::data_local_dir()
+        .expect("Can't find user app data directory")
+        .join(r#"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.3.0.binds"#)
+}
 
 pub fn status_file_path() -> PathBuf {
     dirs::home_dir()

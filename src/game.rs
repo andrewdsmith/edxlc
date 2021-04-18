@@ -1,5 +1,7 @@
+mod controls;
 pub mod file;
 
+pub use controls::*;
 use file::Status;
 
 pub struct Ship {

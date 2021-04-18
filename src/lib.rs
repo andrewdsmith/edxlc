@@ -5,6 +5,7 @@ mod x52pro;
 use events::Event;
 use game::file::Status;
 use game::Ship;
+use game::{Control, Controls};
 use hotwatch::Hotwatch;
 use std::sync::mpsc;
 use std::time::Duration;
@@ -20,6 +21,12 @@ pub fn run() {
 
     // Set LED red initially until the first update in status.
     x52pro.set_led_state(LED::T1T2, LEDState::Red);
+
+    let bindings_file_path = game::file::bindings_file_path();
+    println!("Bindings file path: {:?}", bindings_file_path);
+
+    let controls = Controls::from_file(&bindings_file_path);
+    println!("Controls: {:?}", controls);
 
     let status_file_path = game::file::status_file_path();
     println!("Status file path: {:?}", status_file_path);
@@ -55,16 +62,45 @@ pub fn run() {
             Event::Exit => break,
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
+                    set_led_for_control(
+                        &x52pro,
+                        &controls,
+                        Control::LandingGear,
+                        ship.landing_gear_deployed(),
+                    );
+                    set_led_for_control(
+                        &x52pro,
+                        &controls,
+                        Control::CargoScoop,
+                        ship.cargo_scoop_deployed(),
+                    );
+                    set_led_for_control(
+                        &x52pro,
+                        &controls,
+                        Control::ExternalLights,
+                        ship.external_lights_on(),
+                    );
+
+                    fn set_led_for_control(
+                        x52pro: &x52pro::Device,
+                        controls: &Controls,
+                        control: Control,
+                        state: bool,
+                    ) {
+                        let inputs = controls.inputs_for_control(control);
+
+                        for input in inputs {
+                            let led = x52pro::device::led_for_input(input);
+                            x52pro.set_led_state(led, led_state(state));
+                        }
+                    }
+
                     fn led_state(state: bool) -> LEDState {
                         match state {
                             true => LEDState::Amber,
                             false => LEDState::Green,
                         }
                     }
-
-                    x52pro.set_led_state(LED::T1T2, led_state(ship.landing_gear_deployed()));
-                    x52pro.set_led_state(LED::T3T4, led_state(ship.cargo_scoop_deployed()));
-                    x52pro.set_led_state(LED::T5T6, led_state(ship.external_lights_on()));
                 } else {
                     println!("Status file updated but change not relevant");
                 }

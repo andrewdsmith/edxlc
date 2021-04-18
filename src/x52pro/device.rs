@@ -39,7 +39,16 @@ impl Device {
     }
 }
 
+/// Supported input buttons or axes on the device.
+#[derive(Debug, PartialEq)]
+pub enum Input {
+    T2,
+    T4,
+    T6,
+}
+
 /// Controllable LEDs on the devive.
+#[derive(Debug, PartialEq)]
 pub enum LED {
     T1T2,
     T3T4,
@@ -51,4 +60,26 @@ pub enum LEDState {
     Red,
     Amber,
     Green,
+}
+
+/// Returns the LED that corresponds to a given input. Note that in some cases,
+/// specifically the T buttons, multiple inputs share an LED.
+pub fn led_for_input(input: Input) -> LED {
+    match input {
+        Input::T2 => LED::T1T2,
+        Input::T4 => LED::T3T4,
+        Input::T6 => LED::T5T6,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_maps_input_to_led() {
+        assert_eq!(led_for_input(Input::T2), LED::T1T2);
+        assert_eq!(led_for_input(Input::T4), LED::T3T4);
+        assert_eq!(led_for_input(Input::T6), LED::T5T6);
+    }
 }
