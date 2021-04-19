@@ -4,12 +4,14 @@ The aim of this small companion app is to automatically control the button LEDs
 on your Saitek X52 Pro joystick using the state of your ship or SRV in the game
 Elite Dangerous.
 
-Currently the app toggles the LEDs on the T2, T4 or T6 buttons (only) if bound
-to:
+Currently the app detects if you activate any of the following:
 
 - Landing gear
 - Cargo scoop
 - External lights
+
+If these controls are bound to a button on your X52 Pro (except the Fire button
+or POV 2) then that button will turn yellow when activated.
 
 The app reads the control bindings from the custom bindings file (Horizons not
 Odyssey) so if you're using any other pre-defined set of bindings it won't work.

@@ -3,8 +3,16 @@ use crate::x52pro::device::Input;
 use std::path::PathBuf;
 
 const X52PRO_DEVICE: &str = "SaitekX52Pro";
+const X52PRO_CLUTCH: &str = "Joy_31";
+const X52PRO_FIRE_A: &str = "Joy_3";
+const X52PRO_FIRE_B: &str = "Joy_4";
+const X52PRO_FIRE_D: &str = "Joy_7";
+const X52PRO_FIRE_E: &str = "Joy_8";
+const X52PRO_T1: &str = "Joy_9";
 const X52PRO_T2: &str = "Joy_10";
+const X52PRO_T3: &str = "Joy_11";
 const X52PRO_T4: &str = "Joy_12";
+const X52PRO_T5: &str = "Joy_13";
 const X52PRO_T6: &str = "Joy_14";
 
 /// A supported game control that can be mapped to an X52Pro input.
@@ -60,8 +68,16 @@ impl Controls {
 fn input_from_file_input(input: &BindingsInput) -> Option<Input> {
     match input.device.as_str() {
         X52PRO_DEVICE => match input.name.as_str() {
+            X52PRO_CLUTCH => Some(Input::Clutch),
+            X52PRO_FIRE_A => Some(Input::FireA),
+            X52PRO_FIRE_B => Some(Input::FireB),
+            X52PRO_FIRE_D => Some(Input::FireD),
+            X52PRO_FIRE_E => Some(Input::FireE),
+            X52PRO_T1 => Some(Input::T1),
             X52PRO_T2 => Some(Input::T2),
+            X52PRO_T3 => Some(Input::T3),
             X52PRO_T4 => Some(Input::T4),
+            X52PRO_T5 => Some(Input::T5),
             X52PRO_T6 => Some(Input::T6),
             _ => None,
         },
@@ -106,8 +122,16 @@ mod tests {
             input_from_file_input(&BindingsInput::new(device, name))
         }
 
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_CLUTCH), Some(Input::Clutch));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_A), Some(Input::FireA));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_B), Some(Input::FireB));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_D), Some(Input::FireD));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_E), Some(Input::FireE));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T1), Some(Input::T1));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T2), Some(Input::T2));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T3), Some(Input::T3));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T4), Some(Input::T4));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T5), Some(Input::T5));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T6), Some(Input::T6));
         assert_eq!(call_with(X52PRO_DEVICE, "Other"), None);
         assert_eq!(call_with("Other", X52PRO_T2), None);
