@@ -1,0 +1,20 @@
+# Changes
+
+## Version 1.2
+
+- Reads button bindings from file `Custom.3.0.binds` so that landing gear,
+  cargo scoop, and external light states are displayed on the correct, user
+  configured buttons
+- Adds Clutch, Fire A, Fire B, Fire D, Fire E, T1, T3 and T5 to the supported
+  buttons
+
+## Version 1.1
+
+- Sets T3/T4 button yellow when ship cargo scoop lowered
+- Sets T5/T6 button yellow when ship external lights on
+- Displays version number on startup
+- Exits immediately on Ctrl+C
+
+## Version 1.0
+
+- Sets T1/2 button yellow when ship landing gear deployed
