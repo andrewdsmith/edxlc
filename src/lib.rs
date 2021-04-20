@@ -80,6 +80,12 @@ pub fn run() {
                         Control::ExternalLights,
                         ship.external_lights_on(),
                     );
+                    set_led_for_control(
+                        &x52pro,
+                        &controls,
+                        Control::HyperSuperCombination,
+                        ship.frame_shift_drive_charging(),
+                    );
 
                     fn set_led_for_control(
                         x52pro: &x52pro::Device,

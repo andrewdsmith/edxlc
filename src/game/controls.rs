@@ -19,6 +19,7 @@ const X52PRO_T6: &str = "Joy_14";
 pub enum Control {
     CargoScoop,
     ExternalLights,
+    HyperSuperCombination,
     LandingGear,
 }
 
@@ -47,6 +48,7 @@ impl Controls {
         let control_binding = match control {
             Control::CargoScoop => &self.file.cargo_scoop,
             Control::ExternalLights => &self.file.external_lights,
+            Control::HyperSuperCombination => &self.file.hyper_super_combo,
             Control::LandingGear => &self.file.landing_gear,
         };
 
@@ -99,6 +101,7 @@ mod tests {
                 (X52PRO_DEVICE, X52PRO_T2),
                 (X52PRO_DEVICE, X52PRO_T4),
             ),
+            hyper_super_combo: ControlBinding::new(("", ""), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
 

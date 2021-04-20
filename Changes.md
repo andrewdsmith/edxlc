@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.3
+
+- Shows FSD charging on hyperspace/supercruise combination button.
+
 ## Version 1.2
 
 - Reads button bindings from file `Custom.3.0.binds` so that landing gear,

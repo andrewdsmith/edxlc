@@ -13,6 +13,8 @@ pub struct ControlBindings {
     pub cargo_scoop: ControlBinding,
     #[serde(rename = "LandingGearToggle")]
     pub landing_gear: ControlBinding,
+    #[serde(rename = "HyperSuperCombination")]
+    pub hyper_super_combo: ControlBinding,
 }
 
 impl ControlBindings {
@@ -86,6 +88,10 @@ mod tests {
                     <Primary Device="D5" Key="K5" />
                     <Secondary Device="D6" Key="K6" />
                 </LandingGearToggle>
+                <HyperSuperCombination>
+                    <Primary Device="D7" Key="K7" />
+                    <Secondary Device="D8" Key="K8" />
+                </HyperSuperCombination>
             </Root>
             "#,
         );
@@ -94,6 +100,7 @@ mod tests {
             external_lights: ControlBinding::new(("D1", "K1"), ("D2", "K2")),
             cargo_scoop: ControlBinding::new(("D3", "K3"), ("D4", "K4")),
             landing_gear: ControlBinding::new(("D5", "K5"), ("D6", "K6")),
+            hyper_super_combo: ControlBinding::new(("D7", "K7"), ("D8", "K8")),
         };
 
         assert_eq!(ControlBindings::from_str(xml), expected);
