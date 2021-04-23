@@ -70,7 +70,11 @@ pub fn run() {
                         match status.attribute {
                             Attribute::CargoScoop => vec![Control::CargoScoop],
                             Attribute::ExternalLights => vec![Control::ExternalLights],
-                            Attribute::FrameShiftDrive => vec![Control::HyperSuperCombination],
+                            Attribute::FrameShiftDrive => vec![
+                                Control::Hyperspace,
+                                Control::HyperSuperCombination,
+                                Control::Supercruise,
+                            ],
                             Attribute::LandingGear => vec![Control::LandingGear],
                         }
                     }

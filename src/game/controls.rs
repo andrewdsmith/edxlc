@@ -19,8 +19,10 @@ const X52PRO_T6: &str = "Joy_14";
 pub enum Control {
     CargoScoop,
     ExternalLights,
+    Hyperspace,
     HyperSuperCombination,
     LandingGear,
+    Supercruise,
 }
 
 /// The set of game controls bound to X52Pro inputs as loaded from a bindings
@@ -48,8 +50,10 @@ impl Controls {
         let control_binding = match control {
             Control::CargoScoop => &self.file.cargo_scoop,
             Control::ExternalLights => &self.file.external_lights,
+            Control::Hyperspace => &self.file.hyperspace,
             Control::HyperSuperCombination => &self.file.hyper_super_combo,
             Control::LandingGear => &self.file.landing_gear,
+            Control::Supercruise => &self.file.supercruise,
         };
 
         let mut inputs = Vec::with_capacity(2);
@@ -101,7 +105,9 @@ mod tests {
                 (X52PRO_DEVICE, X52PRO_T2),
                 (X52PRO_DEVICE, X52PRO_T4),
             ),
-            hyper_super_combo: ControlBinding::new(("", ""), ("", "")),
+            hyper_super_combo: ControlBinding::new((X52PRO_DEVICE, X52PRO_T1), ("", "")),
+            supercruise: ControlBinding::new((X52PRO_DEVICE, X52PRO_T3), ("", "")),
+            hyperspace: ControlBinding::new((X52PRO_DEVICE, X52PRO_T5), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
 
@@ -116,6 +122,18 @@ mod tests {
         assert_eq!(
             controls.inputs_for_control(Control::LandingGear),
             vec![Input::T2, Input::T4]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::HyperSuperCombination),
+            vec![Input::T1]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::Supercruise),
+            vec![Input::T3]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::Hyperspace),
+            vec![Input::T5]
         );
     }
 

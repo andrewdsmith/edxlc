@@ -9,10 +9,10 @@ Currently the app detects if you activate any of the following:
 - Landing gear
 - Cargo scoop
 - External lights
-- Frame shift drive (via the hyper-super combo only)
+- Frame shift drive
 
-If these controls are bound to a button on your X52 Pro (except the Fire button
-or POV 2) then that button will turn yellow when activated.
+When activated, any button on your X52 Pro (except currently Fire and POV 2)
+configured to control the item in question will turn yellow when activated.
 
 The app reads the control bindings from the custom bindings file (Horizons not
 Odyssey) so if you're using any other pre-defined set of bindings it won't work.

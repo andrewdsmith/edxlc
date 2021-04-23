@@ -15,6 +15,10 @@ pub struct ControlBindings {
     pub landing_gear: ControlBinding,
     #[serde(rename = "HyperSuperCombination")]
     pub hyper_super_combo: ControlBinding,
+    #[serde(rename = "Supercruise")]
+    pub supercruise: ControlBinding,
+    #[serde(rename = "Hyperspace")]
+    pub hyperspace: ControlBinding,
 }
 
 impl ControlBindings {
@@ -92,6 +96,14 @@ mod tests {
                     <Primary Device="D7" Key="K7" />
                     <Secondary Device="D8" Key="K8" />
                 </HyperSuperCombination>
+                <Supercruise>
+                    <Primary Device="D9" Key="K9" />
+                    <Secondary Device="D10" Key="K10" />
+                </Supercruise>
+                <Hyperspace>
+                    <Primary Device="D11" Key="K11" />
+                    <Secondary Device="D12" Key="K12" />
+                </Hyperspace>
             </Root>
             "#,
         );
@@ -101,6 +113,8 @@ mod tests {
             cargo_scoop: ControlBinding::new(("D3", "K3"), ("D4", "K4")),
             landing_gear: ControlBinding::new(("D5", "K5"), ("D6", "K6")),
             hyper_super_combo: ControlBinding::new(("D7", "K7"), ("D8", "K8")),
+            supercruise: ControlBinding::new(("D9", "K9"), ("D10", "K10")),
+            hyperspace: ControlBinding::new(("D11", "K11"), ("D12", "K12")),
         };
 
         assert_eq!(ControlBindings::from_str(xml), expected);
