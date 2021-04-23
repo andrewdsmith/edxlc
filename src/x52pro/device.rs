@@ -61,7 +61,7 @@ pub enum Input {
 }
 
 /// Controllable LEDs on the devive.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub enum LED {
     Clutch,
     FireA,
@@ -74,6 +74,7 @@ pub enum LED {
 }
 
 /// Available states for LEDs on the device.
+#[derive(PartialEq)]
 pub enum LEDState {
     Red,
     Amber,

@@ -4,9 +4,9 @@ mod x52pro;
 
 use events::Event;
 use game::file::Status;
-use game::Ship;
-use game::{Control, Controls};
+use game::{Attribute, Control, Controls, Ship, StatusLevel};
 use hotwatch::Hotwatch;
+use std::collections::HashMap;
 use std::sync::mpsc;
 use std::time::Duration;
 use x52pro::device::{LEDState, LED};
@@ -62,50 +62,46 @@ pub fn run() {
             Event::Exit => break,
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
-                    set_led_for_control(
-                        &x52pro,
-                        &controls,
-                        Control::LandingGear,
-                        ship.landing_gear_deployed(),
-                    );
-                    set_led_for_control(
-                        &x52pro,
-                        &controls,
-                        Control::CargoScoop,
-                        ship.cargo_scoop_deployed(),
-                    );
-                    set_led_for_control(
-                        &x52pro,
-                        &controls,
-                        Control::ExternalLights,
-                        ship.external_lights_on(),
-                    );
-                    set_led_for_control(
-                        &x52pro,
-                        &controls,
-                        Control::HyperSuperCombination,
-                        ship.frame_shift_drive_charging(),
-                    );
+                    // Here we build a hash of LED states for each LED. This is because each LED
+                    // can represent multiple ship statuses through control bindings. We need to
+                    // find the highest precendence LED state across the applicable ship statuses.
 
-                    fn set_led_for_control(
-                        x52pro: &x52pro::Device,
-                        controls: &Controls,
-                        control: Control,
-                        state: bool,
-                    ) {
-                        let inputs = controls.inputs_for_control(control);
-
-                        for input in inputs {
-                            let led = x52pro::device::led_for_input(input);
-                            x52pro.set_led_state(led, led_state(state));
+                    fn control_for_status(status: &game::Status) -> Control {
+                        match status.attribute {
+                            Attribute::CargoScoop => Control::CargoScoop,
+                            Attribute::ExternalLights => Control::ExternalLights,
+                            Attribute::FrameShiftDrive => Control::HyperSuperCombination,
+                            Attribute::LandingGear => Control::LandingGear,
                         }
                     }
 
-                    fn led_state(state: bool) -> LEDState {
-                        match state {
-                            true => LEDState::Amber,
-                            false => LEDState::Green,
+                    let mut led_states = HashMap::new();
+
+                    for status in ship.statuses() {
+                        // Ultimately we should get a vector back that we loop over because a given
+                        // control may be bound to more than one input.
+                        let control = control_for_status(&status);
+                        let inputs = controls.inputs_for_control(control);
+
+                        for input in inputs {
+                            // Given we get the input-to-LED mapping from the Device already it
+                            // will probably be better to replace the `set_led_state` to something
+                            // like `set_input_state`.
+                            let led = x52pro::device::led_for_input(input);
+
+                            // Similar to above we should probably pass in a StatusLevel to the
+                            // Device instead of mapping externally, given the details of the
+                            // mapping are device-specific.
+                            let led_state = led_states.entry(led).or_insert(LEDState::Green);
+                            if *led_state == LEDState::Green && status.level == StatusLevel::Active
+                            {
+                                *led_state = LEDState::Amber
+                            }
                         }
+                    }
+
+                    for (led, led_state) in led_states {
+                        x52pro.set_led_state(led, led_state);
                     }
                 } else {
                     println!("Status file updated but change not relevant");

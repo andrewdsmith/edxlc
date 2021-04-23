@@ -3,6 +3,8 @@
 ## Version 1.3
 
 - Shows FSD charging on hyperspace/supercruise combination button.
+- Correctly displays an active state (yellow) where one LED represents multiple
+  bound controls, e.g. on T1 and T2.
 
 ## Version 1.2
 

@@ -9,6 +9,7 @@ Currently the app detects if you activate any of the following:
 - Landing gear
 - Cargo scoop
 - External lights
+- Frame shift drive (via the hyper-super combo only)
 
 If these controls are bound to a button on your X52 Pro (except the Fire button
 or POV 2) then that button will turn yellow when activated.
