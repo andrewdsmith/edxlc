@@ -66,36 +66,37 @@ pub fn run() {
                     // can represent multiple ship statuses through control bindings. We need to
                     // find the highest precendence LED state across the applicable ship statuses.
 
-                    fn control_for_status(status: &game::Status) -> Control {
+                    fn controls_for_status(status: &game::Status) -> Vec<Control> {
                         match status.attribute {
-                            Attribute::CargoScoop => Control::CargoScoop,
-                            Attribute::ExternalLights => Control::ExternalLights,
-                            Attribute::FrameShiftDrive => Control::HyperSuperCombination,
-                            Attribute::LandingGear => Control::LandingGear,
+                            Attribute::CargoScoop => vec![Control::CargoScoop],
+                            Attribute::ExternalLights => vec![Control::ExternalLights],
+                            Attribute::FrameShiftDrive => vec![Control::HyperSuperCombination],
+                            Attribute::LandingGear => vec![Control::LandingGear],
                         }
                     }
 
                     let mut led_states = HashMap::new();
 
                     for status in ship.statuses() {
-                        // Ultimately we should get a vector back that we loop over because a given
-                        // control may be bound to more than one input.
-                        let control = control_for_status(&status);
-                        let inputs = controls.inputs_for_control(control);
+                        for control in controls_for_status(&status) {
+                            let inputs = controls.inputs_for_control(control);
 
-                        for input in inputs {
-                            // Given we get the input-to-LED mapping from the Device already it
-                            // will probably be better to replace the `set_led_state` to something
-                            // like `set_input_state`.
-                            let led = x52pro::device::led_for_input(input);
+                            for input in inputs {
+                                // Given we get the input-to-LED mapping from the Device already it
+                                // will probably be better to replace the `set_led_state` to something
+                                // like `set_input_state`.
+                                let led = x52pro::device::led_for_input(input);
 
-                            // Similar to above we should probably pass in a StatusLevel to the
-                            // Device instead of mapping externally, given the details of the
-                            // mapping are device-specific.
-                            let led_state = led_states.entry(led).or_insert(LEDState::Green);
-                            if *led_state == LEDState::Green && status.level == StatusLevel::Active
-                            {
-                                *led_state = LEDState::Amber
+                                // Similar to above we should probably pass in a StatusLevel to the
+                                // Device instead of mapping externally, given the details of the
+                                // mapping are device-specific.
+                                let led_state = led_states.entry(led).or_insert(LEDState::Green);
+
+                                if *led_state == LEDState::Green
+                                    && status.level == StatusLevel::Active
+                                {
+                                    *led_state = LEDState::Amber
+                                }
                             }
                         }
                     }
