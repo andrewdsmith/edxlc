@@ -15,7 +15,8 @@ const STATUS_FILTER: u32 = LANDING_GEAR_DEPLOYED
     | MASS_LOCKED
     | FRAME_SHIFT_DRIVE_COOLDOWN;
 
-const FRAME_SHIFT_DRIVE_BLOCKED: u32 = MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
+const FRAME_SHIFT_DRIVE_BLOCKED: u32 =
+    CARGO_SCOOP_DEPLOYED | MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(PartialEq)]
@@ -170,6 +171,15 @@ mod tests {
             CARGO_SCOOP_DEPLOYED,
             Attribute::CargoScoop,
             StatusLevel::Active,
+        );
+    }
+
+    #[test]
+    fn cargo_scoop_deployed_maps_to_frame_shift_drive_blocked() {
+        assert_status(
+            CARGO_SCOOP_DEPLOYED,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Blocked,
         );
     }
 
