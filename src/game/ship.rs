@@ -4,10 +4,14 @@ use super::file::Status as FileStatus;
 const LANDING_GEAR_DEPLOYED: u32 = 1 << 2;
 const EXTERNAL_LIGHTS_ON: u32 = 1 << 8;
 const CARGO_SCOOP_DEPLOYED: u32 = 1 << 9;
+const MASS_LOCKED: u32 = 1 << 16;
 const FRAME_SHIFT_DRIVE_CHARGING: u32 = 1 << 17;
 
-const STATUS_FILTER: u32 =
-    LANDING_GEAR_DEPLOYED | CARGO_SCOOP_DEPLOYED | EXTERNAL_LIGHTS_ON | FRAME_SHIFT_DRIVE_CHARGING;
+const STATUS_FILTER: u32 = LANDING_GEAR_DEPLOYED
+    | CARGO_SCOOP_DEPLOYED
+    | EXTERNAL_LIGHTS_ON
+    | FRAME_SHIFT_DRIVE_CHARGING
+    | MASS_LOCKED;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(PartialEq)]
@@ -29,6 +33,7 @@ pub struct Status {
 pub enum StatusLevel {
     Inactive,
     Active,
+    Blocked,
 }
 
 pub struct Ship {
@@ -68,7 +73,7 @@ impl Ship {
         });
         statuses.push(Status {
             attribute: Attribute::FrameShiftDrive,
-            level: self.active_if_flag(FRAME_SHIFT_DRIVE_CHARGING),
+            level: self.map_flags_to_status(FRAME_SHIFT_DRIVE_CHARGING, MASS_LOCKED),
         });
         statuses.push(Status {
             attribute: Attribute::LandingGear,
@@ -76,6 +81,14 @@ impl Ship {
         });
 
         statuses
+    }
+
+    fn map_flags_to_status(&self, active_flag: u32, blocking_flag: u32) -> StatusLevel {
+        if self.is_status_flag_set(blocking_flag) {
+            StatusLevel::Blocked
+        } else {
+            self.active_if_flag(active_flag)
+        }
     }
 
     fn active_if_flag(&self, flag: u32) -> StatusLevel {
@@ -106,6 +119,7 @@ mod tests {
             EXTERNAL_LIGHTS_ON,
             CARGO_SCOOP_DEPLOYED,
             FRAME_SHIFT_DRIVE_CHARGING,
+            MASS_LOCKED,
         ] {
             let mut ship = Ship { status_flags: 0 };
 
@@ -153,6 +167,7 @@ mod tests {
             StatusLevel::Active,
         );
     }
+
     #[test]
     fn external_lights_on_maps_to_external_lights_active() {
         assert_status(
@@ -177,6 +192,15 @@ mod tests {
             LANDING_GEAR_DEPLOYED,
             Attribute::LandingGear,
             StatusLevel::Active,
+        );
+    }
+
+    #[test]
+    fn mass_locked_maps_to_frame_shift_drive_blocked() {
+        assert_status(
+            MASS_LOCKED,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Blocked,
         );
     }
 }

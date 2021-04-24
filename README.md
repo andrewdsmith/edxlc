@@ -14,6 +14,10 @@ Currently the app detects if you activate any of the following:
 When activated, any button on your X52 Pro (except currently Fire and POV 2)
 configured to control the item in question will turn yellow when activated.
 
+Buttons that are cannot be used because of certain other conditions turn red.
+For example when mass-locked, all buttons relating to hyperdrive and supercruise
+turn red.
+
 The app reads the control bindings from the custom bindings file (Horizons not
 Odyssey) so if you're using any other pre-defined set of bindings it won't work.
 

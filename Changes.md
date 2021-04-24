@@ -3,9 +3,11 @@
 ## Version 1.3
 
 - Shows FSD charging active state (yellow) on all hyperspace and supercruise
-  related buttons.
+  related buttons
+- Shows FSD mass-locked blocked state (red) on all hyperspace and supercruise
+  related buttons
 - Correctly displays an active state (yellow) where one LED represents multiple
-  bound controls, e.g. on T1 and T2.
+  bound controls, e.g. on T1 and T2
 
 ## Version 1.2
 

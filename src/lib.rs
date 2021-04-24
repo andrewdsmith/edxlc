@@ -96,10 +96,28 @@ pub fn run() {
                                 // mapping are device-specific.
                                 let led_state = led_states.entry(led).or_insert(LEDState::Green);
 
-                                if *led_state == LEDState::Green
-                                    && status.level == StatusLevel::Active
-                                {
-                                    *led_state = LEDState::Amber
+                                set_led_state_if_level(
+                                    &status,
+                                    led_state,
+                                    StatusLevel::Active,
+                                    LEDState::Amber,
+                                );
+                                set_led_state_if_level(
+                                    &status,
+                                    led_state,
+                                    StatusLevel::Blocked,
+                                    LEDState::Red,
+                                );
+
+                                fn set_led_state_if_level(
+                                    status: &game::Status,
+                                    led_state: &mut LEDState,
+                                    level: StatusLevel,
+                                    new_led_state: LEDState,
+                                ) {
+                                    if *led_state != new_led_state && status.level == level {
+                                        *led_state = new_led_state
+                                    }
                                 }
                             }
                         }
