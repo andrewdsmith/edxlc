@@ -6,12 +6,16 @@ const EXTERNAL_LIGHTS_ON: u32 = 1 << 8;
 const CARGO_SCOOP_DEPLOYED: u32 = 1 << 9;
 const MASS_LOCKED: u32 = 1 << 16;
 const FRAME_SHIFT_DRIVE_CHARGING: u32 = 1 << 17;
+const FRAME_SHIFT_DRIVE_COOLDOWN: u32 = 1 << 18;
 
 const STATUS_FILTER: u32 = LANDING_GEAR_DEPLOYED
     | CARGO_SCOOP_DEPLOYED
     | EXTERNAL_LIGHTS_ON
     | FRAME_SHIFT_DRIVE_CHARGING
-    | MASS_LOCKED;
+    | MASS_LOCKED
+    | FRAME_SHIFT_DRIVE_COOLDOWN;
+
+const FRAME_SHIFT_DRIVE_BLOCKED: u32 = MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(PartialEq)]
@@ -73,7 +77,7 @@ impl Ship {
         });
         statuses.push(Status {
             attribute: Attribute::FrameShiftDrive,
-            level: self.map_flags_to_status(FRAME_SHIFT_DRIVE_CHARGING, MASS_LOCKED),
+            level: self.map_flags_to_status(FRAME_SHIFT_DRIVE_CHARGING, FRAME_SHIFT_DRIVE_BLOCKED),
         });
         statuses.push(Status {
             attribute: Attribute::LandingGear,
@@ -120,6 +124,7 @@ mod tests {
             CARGO_SCOOP_DEPLOYED,
             FRAME_SHIFT_DRIVE_CHARGING,
             MASS_LOCKED,
+            FRAME_SHIFT_DRIVE_COOLDOWN,
         ] {
             let mut ship = Ship { status_flags: 0 };
 
@@ -183,6 +188,15 @@ mod tests {
             FRAME_SHIFT_DRIVE_CHARGING,
             Attribute::FrameShiftDrive,
             StatusLevel::Active,
+        );
+    }
+
+    #[test]
+    fn frame_shift_drive_cooldown_maps_to_frame_shift_drive_blocked() {
+        assert_status(
+            FRAME_SHIFT_DRIVE_COOLDOWN,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Blocked,
         );
     }
 
