@@ -1,3 +1,4 @@
+use crate::game::StatusLevel;
 use crate::x52pro::direct_output::DirectOutput;
 
 /// An instance of an interface to a Saitek X52 Pro Flight HOTAS flight
@@ -18,6 +19,15 @@ impl Device {
         Device {
             direct_output: direct_output,
         }
+    }
+
+    /// Sets the given input to specified status level. The LED for the input
+    /// is looked up, as is the LED state for the status level.
+    pub fn set_input_status_level(&self, input: Input, status_level: StatusLevel) {
+        self.set_led_state(
+            led_for_input(input),
+            led_state_for_status_level(status_level),
+        )
     }
 
     /// Set the given LED to the specified state.
@@ -45,7 +55,7 @@ impl Device {
 }
 
 /// Supported input buttons or axes on the device.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub enum Input {
     Clutch,
     FireA,
@@ -61,7 +71,7 @@ pub enum Input {
 }
 
 /// Controllable LEDs on the devive.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum LED {
     Clutch,
     FireA,
@@ -74,7 +84,7 @@ pub enum LED {
 }
 
 /// Available states for LEDs on the device.
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum LEDState {
     Red,
     Amber,
@@ -83,7 +93,7 @@ pub enum LEDState {
 
 /// Returns the LED that corresponds to a given input. Note that in some cases,
 /// specifically the T buttons, multiple inputs share an LED.
-pub fn led_for_input(input: Input) -> LED {
+fn led_for_input(input: Input) -> LED {
     match input {
         Input::Clutch => LED::Clutch,
         Input::FireA => LED::FireA,
@@ -99,12 +109,21 @@ pub fn led_for_input(input: Input) -> LED {
     }
 }
 
+/// Returns the LED state that corrsponds to a given status level.
+fn led_state_for_status_level(status_level: StatusLevel) -> LEDState {
+    match status_level {
+        StatusLevel::Inactive => LEDState::Green,
+        StatusLevel::Active => LEDState::Amber,
+        StatusLevel::Blocked => LEDState::Red,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_maps_input_to_led() {
+    fn input_to_led_permutations() {
         assert_eq!(led_for_input(Input::Clutch), LED::Clutch);
         assert_eq!(led_for_input(Input::FireA), LED::FireA);
         assert_eq!(led_for_input(Input::FireB), LED::FireB);
@@ -116,5 +135,21 @@ mod tests {
         assert_eq!(led_for_input(Input::T4), LED::T3T4);
         assert_eq!(led_for_input(Input::T5), LED::T5T6);
         assert_eq!(led_for_input(Input::T6), LED::T5T6);
+    }
+
+    #[test]
+    fn status_level_for_led_state_permutations() {
+        assert_eq!(
+            led_state_for_status_level(StatusLevel::Inactive),
+            LEDState::Green
+        );
+        assert_eq!(
+            led_state_for_status_level(StatusLevel::Active),
+            LEDState::Amber
+        );
+        assert_eq!(
+            led_state_for_status_level(StatusLevel::Blocked),
+            LEDState::Red
+        );
     }
 }

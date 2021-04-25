@@ -62,9 +62,9 @@ pub fn run() {
             Event::Exit => break,
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
-                    // Here we build a hash of LED states for each LED. This is because each LED
-                    // can represent multiple ship statuses through control bindings. We need to
-                    // find the highest precendence LED state across the applicable ship statuses.
+                    // Here we build a hash of status levels for each input. An input may represent
+                    // multiple ship statuses because it is bound to multiple controls. The hash
+                    // value stores the highest precendence status level found for the input.
 
                     fn controls_for_status(status: &game::Status) -> Vec<Control> {
                         match status.attribute {
@@ -79,52 +79,42 @@ pub fn run() {
                         }
                     }
 
-                    let mut led_states = HashMap::new();
+                    let mut input_states = HashMap::new();
 
                     for status in ship.statuses() {
                         for control in controls_for_status(&status) {
                             let inputs = controls.inputs_for_control(control);
 
                             for input in inputs {
-                                // Given we get the input-to-LED mapping from the Device already it
-                                // will probably be better to replace the `set_led_state` to something
-                                // like `set_input_state`.
-                                let led = x52pro::device::led_for_input(input);
+                                let input_status_level =
+                                    input_states.entry(input).or_insert(StatusLevel::Inactive);
 
-                                // Similar to above we should probably pass in a StatusLevel to the
-                                // Device instead of mapping externally, given the details of the
-                                // mapping are device-specific.
-                                let led_state = led_states.entry(led).or_insert(LEDState::Green);
-
-                                set_led_state_if_level(
+                                set_input_status_level_if_level(
                                     &status,
-                                    led_state,
+                                    input_status_level,
                                     StatusLevel::Active,
-                                    LEDState::Amber,
                                 );
-                                set_led_state_if_level(
+                                set_input_status_level_if_level(
                                     &status,
-                                    led_state,
+                                    input_status_level,
                                     StatusLevel::Blocked,
-                                    LEDState::Red,
                                 );
 
-                                fn set_led_state_if_level(
+                                fn set_input_status_level_if_level(
                                     status: &game::Status,
-                                    led_state: &mut LEDState,
+                                    input_status_level: &mut StatusLevel,
                                     level: StatusLevel,
-                                    new_led_state: LEDState,
                                 ) {
-                                    if *led_state != new_led_state && status.level == level {
-                                        *led_state = new_led_state
+                                    if status.level == level && *input_status_level != level {
+                                        *input_status_level = level
                                     }
                                 }
                             }
                         }
                     }
 
-                    for (led, led_state) in led_states {
-                        x52pro.set_led_state(led, led_state);
+                    for (input, status_level) in input_states {
+                        x52pro.set_input_status_level(input, status_level);
                     }
                 } else {
                     println!("Status file updated but change not relevant");
