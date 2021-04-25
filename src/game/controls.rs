@@ -19,6 +19,7 @@ const X52PRO_T6: &str = "Joy_14";
 pub enum Control {
     CargoScoop,
     ExternalLights,
+    HeatSink,
     Hyperspace,
     HyperSuperCombination,
     LandingGear,
@@ -50,6 +51,7 @@ impl Controls {
         let control_binding = match control {
             Control::CargoScoop => &self.file.cargo_scoop,
             Control::ExternalLights => &self.file.external_lights,
+            Control::HeatSink => &self.file.heat_sink,
             Control::Hyperspace => &self.file.hyperspace,
             Control::HyperSuperCombination => &self.file.hyper_super_combo,
             Control::LandingGear => &self.file.landing_gear,
@@ -108,6 +110,7 @@ mod tests {
             hyper_super_combo: ControlBinding::new((X52PRO_DEVICE, X52PRO_T1), ("", "")),
             supercruise: ControlBinding::new((X52PRO_DEVICE, X52PRO_T3), ("", "")),
             hyperspace: ControlBinding::new((X52PRO_DEVICE, X52PRO_T5), ("", "")),
+            heat_sink: ControlBinding::new((X52PRO_DEVICE, X52PRO_T6), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
 
@@ -134,6 +137,10 @@ mod tests {
         assert_eq!(
             controls.inputs_for_control(Control::Hyperspace),
             vec![Input::T5]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::HeatSink),
+            vec![Input::T6]
         );
     }
 

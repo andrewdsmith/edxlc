@@ -75,6 +75,7 @@ pub fn run() {
                                 Control::HyperSuperCombination,
                                 Control::Supercruise,
                             ],
+                            Attribute::HeatSink => vec![Control::HeatSink],
                             Attribute::LandingGear => vec![Control::LandingGear],
                         }
                     }
@@ -98,6 +99,11 @@ pub fn run() {
                                     &status,
                                     input_status_level,
                                     StatusLevel::Blocked,
+                                );
+                                set_input_status_level_if_level(
+                                    &status,
+                                    input_status_level,
+                                    StatusLevel::Alert,
                                 );
 
                                 fn set_input_status_level_if_level(

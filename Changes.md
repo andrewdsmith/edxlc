@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.4
+
+- Shows alert state (red) on heat sink button when overheating
+
 ## Version 1.3
 
 - Shows active state (yellow) on all hyperspace and supercruise related buttons

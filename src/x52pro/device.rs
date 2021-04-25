@@ -115,6 +115,7 @@ fn led_state_for_status_level(status_level: StatusLevel) -> LEDState {
         StatusLevel::Inactive => LEDState::Green,
         StatusLevel::Active => LEDState::Amber,
         StatusLevel::Blocked => LEDState::Red,
+        StatusLevel::Alert => LEDState::Red,
     }
 }
 

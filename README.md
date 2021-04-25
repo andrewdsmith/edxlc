@@ -18,6 +18,9 @@ Buttons that are cannot be used because of certain other conditions turn red.
 For example when mass-locked, all buttons relating to hyperdrive and supercruise
 turn red.
 
+Buttons that may require immediate activation alert by turning red. For example
+when overheating, the heat sink button turns red.
+
 The app reads the control bindings from the custom bindings file (Horizons not
 Odyssey) so if you're using any other pre-defined set of bindings it won't work.
 

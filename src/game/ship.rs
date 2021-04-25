@@ -7,13 +7,15 @@ const CARGO_SCOOP_DEPLOYED: u32 = 1 << 9;
 const MASS_LOCKED: u32 = 1 << 16;
 const FRAME_SHIFT_DRIVE_CHARGING: u32 = 1 << 17;
 const FRAME_SHIFT_DRIVE_COOLDOWN: u32 = 1 << 18;
+const OVERHEATING: u32 = 1 << 20;
 
 const STATUS_FILTER: u32 = LANDING_GEAR_DEPLOYED
     | CARGO_SCOOP_DEPLOYED
     | EXTERNAL_LIGHTS_ON
     | FRAME_SHIFT_DRIVE_CHARGING
     | MASS_LOCKED
-    | FRAME_SHIFT_DRIVE_COOLDOWN;
+    | FRAME_SHIFT_DRIVE_COOLDOWN
+    | OVERHEATING;
 
 const FRAME_SHIFT_DRIVE_BLOCKED: u32 =
     CARGO_SCOOP_DEPLOYED | MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
@@ -24,6 +26,7 @@ pub enum Attribute {
     CargoScoop,
     ExternalLights,
     FrameShiftDrive,
+    HeatSink,
     LandingGear,
 }
 
@@ -39,6 +42,7 @@ pub enum StatusLevel {
     Inactive,
     Active,
     Blocked,
+    Alert,
 }
 
 pub struct Ship {
@@ -70,11 +74,11 @@ impl Ship {
 
         statuses.push(Status {
             attribute: Attribute::CargoScoop,
-            level: self.active_if_flag(CARGO_SCOOP_DEPLOYED),
+            level: self.map_level_to_flag(StatusLevel::Active, CARGO_SCOOP_DEPLOYED),
         });
         statuses.push(Status {
             attribute: Attribute::ExternalLights,
-            level: self.active_if_flag(EXTERNAL_LIGHTS_ON),
+            level: self.map_level_to_flag(StatusLevel::Active, EXTERNAL_LIGHTS_ON),
         });
         statuses.push(Status {
             attribute: Attribute::FrameShiftDrive,
@@ -82,7 +86,11 @@ impl Ship {
         });
         statuses.push(Status {
             attribute: Attribute::LandingGear,
-            level: self.active_if_flag(LANDING_GEAR_DEPLOYED),
+            level: self.map_level_to_flag(StatusLevel::Active, LANDING_GEAR_DEPLOYED),
+        });
+        statuses.push(Status {
+            attribute: Attribute::HeatSink,
+            level: self.map_level_to_flag(StatusLevel::Alert, OVERHEATING),
         });
 
         statuses
@@ -92,13 +100,13 @@ impl Ship {
         if self.is_status_flag_set(blocking_flag) {
             StatusLevel::Blocked
         } else {
-            self.active_if_flag(active_flag)
+            self.map_level_to_flag(StatusLevel::Active, active_flag)
         }
     }
 
-    fn active_if_flag(&self, flag: u32) -> StatusLevel {
+    fn map_level_to_flag(&self, status_level: StatusLevel, flag: u32) -> StatusLevel {
         if self.is_status_flag_set(flag) {
-            StatusLevel::Active
+            status_level
         } else {
             StatusLevel::Inactive
         }
@@ -126,6 +134,7 @@ mod tests {
             FRAME_SHIFT_DRIVE_CHARGING,
             MASS_LOCKED,
             FRAME_SHIFT_DRIVE_COOLDOWN,
+            OVERHEATING,
         ] {
             let mut ship = Ship { status_flags: 0 };
 
@@ -226,5 +235,10 @@ mod tests {
             Attribute::FrameShiftDrive,
             StatusLevel::Blocked,
         );
+    }
+
+    #[test]
+    fn overheating_maps_to_heat_sink_alert() {
+        assert_status(OVERHEATING, Attribute::HeatSink, StatusLevel::Alert);
     }
 }
