@@ -11,7 +11,7 @@ use std::sync::mpsc;
 use std::time::Duration;
 use x52pro::device::{LEDState, LED};
 
-const VERSION: &str = "1.3";
+const VERSION: &str = "1.4";
 
 pub fn run() {
     println!("EDXLC {}", VERSION);
