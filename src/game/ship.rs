@@ -1,15 +1,17 @@
 use super::file::Status as FileStatus;
 
-// See: https://elite-journal.readthedocs.io/en/latest/Status%20File/
-const LANDING_GEAR_DEPLOYED: u32 = 1 << 2;
-const EXTERNAL_LIGHTS_ON: u32 = 1 << 8;
-const CARGO_SCOOP_DEPLOYED: u32 = 1 << 9;
-const MASS_LOCKED: u32 = 1 << 16;
-const FRAME_SHIFT_DRIVE_CHARGING: u32 = 1 << 17;
-const FRAME_SHIFT_DRIVE_COOLDOWN: u32 = 1 << 18;
-const OVERHEATING: u32 = 1 << 20;
+type StatusBitField = u32;
 
-const STATUS_FILTER: u32 = LANDING_GEAR_DEPLOYED
+// See: https://elite-journal.readthedocs.io/en/latest/Status%20File/
+const LANDING_GEAR_DEPLOYED: StatusBitField = 1 << 2;
+const EXTERNAL_LIGHTS_ON: StatusBitField = 1 << 8;
+const CARGO_SCOOP_DEPLOYED: StatusBitField = 1 << 9;
+const MASS_LOCKED: StatusBitField = 1 << 16;
+const FRAME_SHIFT_DRIVE_CHARGING: StatusBitField = 1 << 17;
+const FRAME_SHIFT_DRIVE_COOLDOWN: StatusBitField = 1 << 18;
+const OVERHEATING: StatusBitField = 1 << 20;
+
+const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | CARGO_SCOOP_DEPLOYED
     | EXTERNAL_LIGHTS_ON
     | FRAME_SHIFT_DRIVE_CHARGING
@@ -17,7 +19,7 @@ const STATUS_FILTER: u32 = LANDING_GEAR_DEPLOYED
     | FRAME_SHIFT_DRIVE_COOLDOWN
     | OVERHEATING;
 
-const FRAME_SHIFT_DRIVE_BLOCKED: u32 =
+const FRAME_SHIFT_DRIVE_BLOCKED: StatusBitField =
     CARGO_SCOOP_DEPLOYED | MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
 
 /// An attribute of a `Ship` that can be associated with a value.
@@ -46,7 +48,7 @@ pub enum StatusLevel {
 }
 
 pub struct Ship {
-    status_flags: u32,
+    status_flags: StatusBitField,
 }
 
 impl Ship {
@@ -96,7 +98,11 @@ impl Ship {
         statuses
     }
 
-    fn map_flags_to_status(&self, active_flag: u32, blocking_flag: u32) -> StatusLevel {
+    fn map_flags_to_status(
+        &self,
+        active_flag: StatusBitField,
+        blocking_flag: StatusBitField,
+    ) -> StatusLevel {
         if self.is_status_flag_set(blocking_flag) {
             StatusLevel::Blocked
         } else {
@@ -104,7 +110,7 @@ impl Ship {
         }
     }
 
-    fn map_level_to_flag(&self, status_level: StatusLevel, flag: u32) -> StatusLevel {
+    fn map_level_to_flag(&self, status_level: StatusLevel, flag: StatusBitField) -> StatusLevel {
         if self.is_status_flag_set(flag) {
             status_level
         } else {
@@ -112,11 +118,11 @@ impl Ship {
         }
     }
 
-    fn is_status_flag_set(&self, flag: u32) -> bool {
+    fn is_status_flag_set(&self, flag: StatusBitField) -> bool {
         (self.status_flags & flag) != 0
     }
 
-    fn filtered_status_flags(flags: u32) -> u32 {
+    fn filtered_status_flags(flags: StatusBitField) -> StatusBitField {
         flags & STATUS_FILTER
     }
 }
