@@ -2,7 +2,7 @@
 
 ## Version 1.4
 
-- Shows alert state (red) on heat sink button when overheating
+- Shows alert state (red/yellow flashing) on heat sink button when overheating
 
 ## Version 1.3
 

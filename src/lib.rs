@@ -8,16 +8,18 @@ use game::{Attribute, Control, Controls, Ship, StatusLevel};
 use hotwatch::Hotwatch;
 use std::collections::HashMap;
 use std::sync::mpsc;
+use std::thread;
 use std::time::Duration;
 use x52pro::device::{LEDState, LED};
 
 const VERSION: &str = "1.4";
+const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
 
 pub fn run() {
     println!("EDXLC {}", VERSION);
     println!("Press Ctrl+C to exit");
 
-    let x52pro = x52pro::Device::new();
+    let mut x52pro = x52pro::Device::new();
 
     // Set LED red initially until the first update in status.
     x52pro.set_led_state(LED::T1T2, LEDState::Red);
@@ -37,6 +39,7 @@ pub fn run() {
     let mut ship = Ship::from_status(initial_status);
     let (tx, rx) = mpsc::channel();
     let tx2 = tx.clone();
+    let tx3 = tx.clone();
     let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
         .expect("File watcher failed to initialize");
 
@@ -57,9 +60,18 @@ pub fn run() {
     })
     .expect("Failed to set Ctrl+C handler");
 
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(ANIMATION_TICK_MILLISECONDS));
+        tx3.send(Event::AnimationTick)
+            .expect("Could not send animation tick message");
+    });
+
     for event in rx {
         match event {
             Event::Exit => break,
+            Event::AnimationTick => {
+                x52pro.update_animated_leds();
+            }
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
                     // Here we build a hash of status levels for each input. An input may represent

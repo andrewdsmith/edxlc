@@ -1,10 +1,16 @@
 use crate::game::StatusLevel;
 use crate::x52pro::direct_output::DirectOutput;
+use std::collections::HashMap;
+use std::time::SystemTime;
+
+pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 
 /// An instance of an interface to a Saitek X52 Pro Flight HOTAS flight
 /// controller device.
 pub struct Device {
     direct_output: DirectOutput,
+    input_state_levels: HashMap<Input, StatusLevel>,
+    reference_time: SystemTime,
 }
 
 impl Device {
@@ -18,16 +24,16 @@ impl Device {
 
         Device {
             direct_output: direct_output,
+            input_state_levels: HashMap::new(),
+            reference_time: SystemTime::now(),
         }
     }
 
     /// Sets the given input to specified status level. The LED for the input
     /// is looked up, as is the LED state for the status level.
-    pub fn set_input_status_level(&self, input: Input, status_level: StatusLevel) {
-        self.set_led_state(
-            led_for_input(input),
-            led_state_for_status_level(status_level),
-        )
+    pub fn set_input_status_level(&mut self, input: Input, status_level: StatusLevel) {
+        self.set_led_from_input_and_status_level(&input, &status_level);
+        self.input_state_levels.insert(input, status_level);
     }
 
     /// Set the given LED to the specified state.
@@ -51,6 +57,26 @@ impl Device {
 
         self.direct_output.set_led(red_led_id, red_led_state);
         self.direct_output.set_led(green_led_id, green_led_state);
+    }
+
+    /// Updates LEDs that have a state that is animated, e.g. flashing. This
+    /// needs to be called frequently for proper animation.
+    //
+    // Ideally the device would manage its own threading for animation but
+    // this would require state updates to be communicated asynchronously.
+    pub fn update_animated_leds(&self) {
+        for (input, status_level) in &self.input_state_levels {
+            if *status_level == StatusLevel::Alert {
+                self.set_led_from_input_and_status_level(input, status_level);
+            }
+        }
+    }
+
+    fn set_led_from_input_and_status_level(&self, input: &Input, status_level: &StatusLevel) {
+        self.set_led_state(
+            led_for_input(input),
+            led_state_for_status_level(status_level, self.reference_time),
+        );
     }
 }
 
@@ -93,7 +119,7 @@ pub enum LEDState {
 
 /// Returns the LED that corresponds to a given input. Note that in some cases,
 /// specifically the T buttons, multiple inputs share an LED.
-fn led_for_input(input: Input) -> LED {
+fn led_for_input(input: &Input) -> LED {
     match input {
         Input::Clutch => LED::Clutch,
         Input::FireA => LED::FireA,
@@ -110,12 +136,19 @@ fn led_for_input(input: Input) -> LED {
 }
 
 /// Returns the LED state that corrsponds to a given status level.
-fn led_state_for_status_level(status_level: StatusLevel) -> LEDState {
+fn led_state_for_status_level(status_level: &StatusLevel, reference_time: SystemTime) -> LEDState {
     match status_level {
         StatusLevel::Inactive => LEDState::Green,
         StatusLevel::Active => LEDState::Amber,
         StatusLevel::Blocked => LEDState::Red,
-        StatusLevel::Alert => LEDState::Red,
+        StatusLevel::Alert => {
+            let millis = reference_time.elapsed().unwrap().as_millis();
+            if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
+                LEDState::Red
+            } else {
+                LEDState::Amber
+            }
+        }
     }
 }
 
@@ -125,32 +158,34 @@ mod tests {
 
     #[test]
     fn input_to_led_permutations() {
-        assert_eq!(led_for_input(Input::Clutch), LED::Clutch);
-        assert_eq!(led_for_input(Input::FireA), LED::FireA);
-        assert_eq!(led_for_input(Input::FireB), LED::FireB);
-        assert_eq!(led_for_input(Input::FireD), LED::FireD);
-        assert_eq!(led_for_input(Input::FireE), LED::FireE);
-        assert_eq!(led_for_input(Input::T1), LED::T1T2);
-        assert_eq!(led_for_input(Input::T2), LED::T1T2);
-        assert_eq!(led_for_input(Input::T3), LED::T3T4);
-        assert_eq!(led_for_input(Input::T4), LED::T3T4);
-        assert_eq!(led_for_input(Input::T5), LED::T5T6);
-        assert_eq!(led_for_input(Input::T6), LED::T5T6);
+        assert_led_for_input(Input::Clutch, LED::Clutch);
+        assert_led_for_input(Input::FireA, LED::FireA);
+        assert_led_for_input(Input::FireB, LED::FireB);
+        assert_led_for_input(Input::FireD, LED::FireD);
+        assert_led_for_input(Input::FireE, LED::FireE);
+        assert_led_for_input(Input::T1, LED::T1T2);
+        assert_led_for_input(Input::T2, LED::T1T2);
+        assert_led_for_input(Input::T3, LED::T3T4);
+        assert_led_for_input(Input::T4, LED::T3T4);
+        assert_led_for_input(Input::T5, LED::T5T6);
+        assert_led_for_input(Input::T6, LED::T5T6);
+    }
+
+    fn assert_led_for_input(input: Input, led: LED) {
+        assert_eq!(led_for_input(&input), led);
     }
 
     #[test]
     fn status_level_for_led_state_permutations() {
+        assert_led_state_for_status_level(StatusLevel::Inactive, LEDState::Green);
+        assert_led_state_for_status_level(StatusLevel::Active, LEDState::Amber);
+        assert_led_state_for_status_level(StatusLevel::Blocked, LEDState::Red);
+    }
+
+    fn assert_led_state_for_status_level(status_level: StatusLevel, led_state: LEDState) {
         assert_eq!(
-            led_state_for_status_level(StatusLevel::Inactive),
-            LEDState::Green
-        );
-        assert_eq!(
-            led_state_for_status_level(StatusLevel::Active),
-            LEDState::Amber
-        );
-        assert_eq!(
-            led_state_for_status_level(StatusLevel::Blocked),
-            LEDState::Red
+            led_state_for_status_level(&status_level, SystemTime::now()),
+            led_state,
         );
     }
 }
