@@ -6,6 +6,7 @@ use events::Event;
 use game::file::Status;
 use game::{Attribute, Control, Controls, Ship, StatusLevel};
 use hotwatch::Hotwatch;
+use log::{debug, info};
 use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
@@ -15,9 +16,17 @@ use x52pro::device::{LEDState, LED};
 const VERSION: &str = "1.4";
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
 
+#[cfg(debug_assertions)]
+const DEFAULT_LOG_LEVEL: &str = "edxlc=debug";
+#[cfg(not(debug_assertions))]
+const DEFAULT_LOG_LEVEL: &str = "info";
+
 pub fn run() {
-    println!("EDXLC {}", VERSION);
-    println!("Press Ctrl+C to exit");
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(DEFAULT_LOG_LEVEL))
+        .init();
+
+    info!("EDXLC {}", VERSION);
+    info!("Press Ctrl+C to exit");
 
     let mut x52pro = x52pro::Device::new();
 
@@ -25,13 +34,13 @@ pub fn run() {
     x52pro.set_led_state(LED::T1T2, LEDState::Red);
 
     let bindings_file_path = game::file::bindings_file_path();
-    println!("Bindings file path: {:?}", bindings_file_path);
+    debug!("Bindings file path: {:?}", bindings_file_path);
 
     let controls = Controls::from_file(&bindings_file_path);
-    println!("Controls: {:?}", controls);
+    debug!("Controls: {:?}", controls);
 
     let status_file_path = game::file::status_file_path();
-    println!("Status file path: {:?}", status_file_path);
+    debug!("Status file path: {:?}", status_file_path);
 
     let initial_status =
         Status::from_file(&status_file_path).expect("Could not read current status");
@@ -55,7 +64,7 @@ pub fn run() {
         .expect("Failed to watch status file");
 
     ctrlc::set_handler(move || {
-        println!("Received Ctrl+C");
+        info!("Received Ctrl+C");
         tx2.send(Event::Exit).expect("Could not send exit message");
     })
     .expect("Failed to set Ctrl+C handler");
@@ -135,11 +144,11 @@ pub fn run() {
                         x52pro.set_input_status_level(input, status_level);
                     }
                 } else {
-                    println!("Status file updated but change not relevant");
+                    debug!("Status file updated but change not relevant");
                 }
             }
         }
     }
 
-    println!("Exiting");
+    info!("Exiting");
 }

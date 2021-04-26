@@ -1,5 +1,6 @@
 use libc::c_void;
 use libloading::{os::windows::Symbol, Library};
+use log::debug;
 use std::ffi::OsStr;
 use std::iter::once;
 use std::os::windows::ffi::OsStrExt;
@@ -84,7 +85,7 @@ impl DirectOutput {
     pub fn initialize(&self) {
         unsafe {
             let result = (self.initialize_fn)(Self::win32_string(PLUGIN_NAME).as_ptr());
-            println!("DirectOutput_Initialize result = {:?}", result);
+            debug!("DirectOutput_Initialize result = {:?}", result);
 
             if result != 0 {
                 panic!("Could not initialize the DirectOutput library");
@@ -99,13 +100,13 @@ impl DirectOutput {
     /// which may not be true in general. Panics if the enumeration fails.
     pub fn enumerate(&mut self) {
         extern "C" fn callback(device: DeviceHandle, target: &mut DirectOutput) {
-            println!("DirectOutput_Enumerate device = {:?}", device);
+            debug!("DirectOutput_Enumerate device = {:?}", device);
             target.device = device;
         }
 
         unsafe {
             let result = (self.enumerate_fn)(callback, self);
-            println!("DirectOutput_Enumerate result = {:?}", result);
+            debug!("DirectOutput_Enumerate result = {:?}", result);
 
             if result != 0 {
                 panic!("Could not enumerate dervices with DirectOutput");
@@ -124,7 +125,7 @@ impl DirectOutput {
 
         unsafe {
             let result = (self.add_page_fn)(self.device, PAGE_ID, debug_name, FLAG_SET_AS_ACTIVE);
-            println!("DirectOutput_AddPage result = {:?}", result);
+            debug!("DirectOutput_AddPage result = {:?}", result);
 
             if result != 0 {
                 panic!("Could not add page with DirectOutput");
@@ -140,7 +141,7 @@ impl DirectOutput {
 
         unsafe {
             let result = (self.set_led_fn)(self.device, PAGE_ID, id, value);
-            println!("DirectOutput_SetLed result = {:?}", result);
+            debug!("DirectOutput_SetLed result = {:?}", result);
 
             if result != 0 {
                 panic!("Could not set LED with DirectOutput");

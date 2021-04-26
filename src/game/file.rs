@@ -1,6 +1,7 @@
 mod control_bindings;
 
 pub use control_bindings::*;
+use log::debug;
 use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
@@ -31,7 +32,7 @@ impl Status {
 
         // When exiting the game temporarily writes an empty file.
         if json == "" {
-            println!("Status file empty");
+            debug!("Status file empty");
             None
         } else {
             Some(Status::from_json(json))
@@ -39,7 +40,7 @@ impl Status {
     }
 
     pub fn from_json(json: String) -> Status {
-        println!("Parsing JSON: {}", json);
+        debug!("Parsing JSON: {}", json);
         serde_json::from_str(&json).expect("Could not parse status JSON")
     }
 }
