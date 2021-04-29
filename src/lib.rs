@@ -13,7 +13,7 @@ use std::thread;
 use std::time::Duration;
 use x52pro::device::{LEDState, LED};
 
-const VERSION: &str = "1.4";
+const VERSION: &str = "1.5";
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
 
 #[cfg(debug_assertions)]
