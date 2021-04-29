@@ -2,6 +2,7 @@
 
 ## Version 1.4
 
+- App icon!
 - Shows alert state (red/yellow flashing) on heat sink button when overheating
 - Silences most output but this can be re-enabled by setting the `RUST_LOG`
   environment variable to `edxlc=debug` prior to execution
