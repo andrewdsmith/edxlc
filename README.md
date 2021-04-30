@@ -28,10 +28,6 @@ The intent is that over time more buttons, controls and states will be
 supported. Additionally, the app will become configurable to set the desired
 colours for conditions such as active, in use and alert.
 
-The T1/T2 button is set red initially until the first change is detected. This
-behaviour is to give rapid feedback that the app has detected the joystick and
-can set LED colours, but will be removed in the near future.
-
 The app runs in a console window and can be exited with Ctrl+C.
 
 ## Installation

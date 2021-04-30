@@ -52,10 +52,9 @@ pub struct Ship {
 }
 
 impl Ship {
-    pub fn from_status(status: FileStatus) -> Self {
-        Self {
-            status_flags: Self::filtered_status_flags(status.flags),
-        }
+    /// Returns a `Ship` instance.
+    pub fn new() -> Self {
+        Self { status_flags: 0 }
     }
 
     pub fn update_status(&mut self, status: FileStatus) -> bool {

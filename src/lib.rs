@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use x52pro::device::{LEDState, LED};
 
 const VERSION: &str = "1.5";
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
@@ -30,9 +29,6 @@ pub fn run() {
 
     let mut x52pro = x52pro::Device::new();
 
-    // Set LED red initially until the first update in status.
-    x52pro.set_led_state(LED::T1T2, LEDState::Red);
-
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);
 
@@ -42,11 +38,14 @@ pub fn run() {
     let status_file_path = game::file::status_file_path();
     debug!("Status file path: {:?}", status_file_path);
 
+    let mut ship = Ship::new();
+    let (tx, rx) = mpsc::channel();
+
     let initial_status =
         Status::from_file(&status_file_path).expect("Could not read current status");
+    tx.send(Event::StatusUpdate(initial_status))
+        .expect("Could not send status update message");
 
-    let mut ship = Ship::from_status(initial_status);
-    let (tx, rx) = mpsc::channel();
     let tx2 = tx.clone();
     let tx3 = tx.clone();
     let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))

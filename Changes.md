@@ -1,5 +1,10 @@
 # Changes
 
+## Version 1.5
+
+- Show correct states immediately, i.e. do not wait for first significant state
+  change before updating.
+
 ## Version 1.4
 
 - App icon!

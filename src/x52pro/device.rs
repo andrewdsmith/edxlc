@@ -37,7 +37,7 @@ impl Device {
     }
 
     /// Set the given LED to the specified state.
-    pub fn set_led_state(&self, led: LED, state: LEDState) {
+    fn set_led_state(&self, led: LED, state: LEDState) {
         let (red_led_id, green_led_id) = match led {
             LED::Clutch => (17, 18),
             LED::FireA => (1, 2),
@@ -98,7 +98,7 @@ pub enum Input {
 
 /// Controllable LEDs on the devive.
 #[derive(Debug, PartialEq)]
-pub enum LED {
+enum LED {
     Clutch,
     FireA,
     FireB,
@@ -111,7 +111,7 @@ pub enum LED {
 
 /// Available states for LEDs on the device.
 #[derive(Debug, PartialEq)]
-pub enum LEDState {
+enum LEDState {
     Red,
     Amber,
     Green,
