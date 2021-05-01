@@ -10,12 +10,12 @@ pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 pub struct Device {
     direct_output: DirectOutput,
     input_state_levels: HashMap<Input, StatusLevel>,
-    reference_time: SystemTime,
+    status_level_mapper: StatusLevelMapper,
 }
 
 impl Device {
-    /// Returns a new instance the the device interface. Panics if the
-    /// underlying DirectOutput instance cannot be loaded.
+    /// Returns a new instance of the device interface. Panics if the
+    /// underlying `DirectOutput` instance cannot be loaded.
     pub fn new() -> Self {
         let mut direct_output = DirectOutput::load();
         direct_output.initialize();
@@ -25,7 +25,7 @@ impl Device {
         Device {
             direct_output: direct_output,
             input_state_levels: HashMap::new(),
-            reference_time: SystemTime::now(),
+            status_level_mapper: StatusLevelMapper::new(),
         }
     }
 
@@ -75,7 +75,7 @@ impl Device {
     fn set_led_from_input_and_status_level(&self, input: &Input, status_level: &StatusLevel) {
         self.set_led_state(
             led_for_input(input),
-            led_state_for_status_level(status_level, self.reference_time),
+            self.status_level_mapper.led_state(status_level),
         );
     }
 }
@@ -135,18 +135,37 @@ fn led_for_input(input: &Input) -> LED {
     }
 }
 
-/// Returns the LED state that corrsponds to a given status level.
-fn led_state_for_status_level(status_level: &StatusLevel, reference_time: SystemTime) -> LEDState {
-    match status_level {
-        StatusLevel::Inactive => LEDState::Green,
-        StatusLevel::Active => LEDState::Amber,
-        StatusLevel::Blocked => LEDState::Red,
-        StatusLevel::Alert => {
-            let millis = reference_time.elapsed().unwrap().as_millis();
-            if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
-                LEDState::Red
-            } else {
-                LEDState::Amber
+/// An mapper that returns an `LEDState` for a given `StateLevel`. The mapping
+/// depends on time to support animated (flashing) states.
+struct StatusLevelMapper {
+    reference_time: SystemTime,
+}
+
+impl StatusLevelMapper {
+    /// Returns a new instance the mapper.
+    pub fn new() -> Self {
+        Self {
+            reference_time: SystemTime::now(),
+        }
+    }
+
+    /// Returns the LED state that corrsponds to a given status level.
+    //
+    // Could take a closure here instead that passes in a hash mapping state
+    // levels to LED states, meaning animated states need only be calculated
+    // once.
+    fn led_state(&self, status_level: &StatusLevel) -> LEDState {
+        match status_level {
+            StatusLevel::Inactive => LEDState::Green,
+            StatusLevel::Active => LEDState::Amber,
+            StatusLevel::Blocked => LEDState::Red,
+            StatusLevel::Alert => {
+                let millis = self.reference_time.elapsed().unwrap().as_millis();
+                if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
+                    LEDState::Red
+                } else {
+                    LEDState::Amber
+                }
             }
         }
     }
@@ -183,9 +202,7 @@ mod tests {
     }
 
     fn assert_led_state_for_status_level(status_level: StatusLevel, led_state: LEDState) {
-        assert_eq!(
-            led_state_for_status_level(&status_level, SystemTime::now()),
-            led_state,
-        );
+        let status_level_mapper = StatusLevelMapper::new();
+        assert_eq!(status_level_mapper.led_state(&status_level), led_state);
     }
 }
