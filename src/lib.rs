@@ -110,30 +110,8 @@ pub fn run() {
                                 let input_status_level =
                                     input_states.entry(input).or_insert(StatusLevel::Inactive);
 
-                                set_input_status_level_if_level(
-                                    &status,
-                                    input_status_level,
-                                    StatusLevel::Active,
-                                );
-                                set_input_status_level_if_level(
-                                    &status,
-                                    input_status_level,
-                                    StatusLevel::Blocked,
-                                );
-                                set_input_status_level_if_level(
-                                    &status,
-                                    input_status_level,
-                                    StatusLevel::Alert,
-                                );
-
-                                fn set_input_status_level_if_level(
-                                    status: &game::Status,
-                                    input_status_level: &mut StatusLevel,
-                                    level: StatusLevel,
-                                ) {
-                                    if status.level == level && *input_status_level != level {
-                                        *input_status_level = level
-                                    }
+                                if status.level > *input_status_level {
+                                    *input_status_level = status.level.clone();
                                 }
                             }
                         }

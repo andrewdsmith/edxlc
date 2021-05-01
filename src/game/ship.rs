@@ -39,7 +39,7 @@ pub struct Status {
 }
 
 /// A status value that can associated to an `Attibute` through a `Status`
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum StatusLevel {
     Inactive,
     Active,
