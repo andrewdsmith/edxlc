@@ -4,10 +4,9 @@ mod x52pro;
 
 use events::Event;
 use game::file::Status;
-use game::{Attribute, Control, Controls, Ship, StatusLevel};
+use game::{Attribute, Control, Controls, Ship};
 use hotwatch::Hotwatch;
 use log::{debug, info};
-use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -82,10 +81,6 @@ pub fn run() {
             }
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
-                    // Here we build a hash of status levels for each input. An input may represent
-                    // multiple ship statuses because it is bound to multiple controls. The hash
-                    // value stores the highest precendence status level found for the input.
-
                     fn controls_for_status(status: &game::Status) -> Vec<Control> {
                         match status.attribute {
                             Attribute::CargoScoop => vec![Control::CargoScoop],
@@ -100,26 +95,19 @@ pub fn run() {
                         }
                     }
 
-                    let mut input_states = HashMap::new();
+                    let mut input_status_levels = Vec::new();
 
+                    // This can probably be written functionally by mapping.
                     for status in ship.statuses() {
                         for control in controls_for_status(&status) {
-                            let inputs = controls.inputs_for_control(control);
-
-                            for input in inputs {
-                                let input_status_level =
-                                    input_states.entry(input).or_insert(StatusLevel::Inactive);
-
-                                if status.level > *input_status_level {
-                                    *input_status_level = status.level.clone();
-                                }
+                            for input in controls.inputs_for_control(control) {
+                                debug!("Input={:?}, StatusLevel={:?}", input, status.level);
+                                input_status_levels.push((input, status.level.clone()));
                             }
                         }
                     }
 
-                    for (input, status_level) in input_states {
-                        x52pro.set_input_status_level(input, status_level);
-                    }
+                    x52pro.set_input_status_levels(input_status_levels);
                 } else {
                     debug!("Status file updated but change not relevant");
                 }

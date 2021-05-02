@@ -29,9 +29,33 @@ impl Device {
         }
     }
 
-    /// Sets the given input to specified status level. The LED for the input
-    /// is looked up, as is the LED state for the status level.
-    pub fn set_input_status_level(&mut self, input: Input, status_level: StatusLevel) {
+    /// Sets each input to specified status level. Repeated inputs with
+    /// different status levels are handled by using the highest value. The LED
+    /// for the input is looked up, as is the LED state for the status level.
+    pub fn set_input_status_levels(&mut self, input_status_levels: Vec<(Input, StatusLevel)>) {
+        // Build a hash of the highest status level value for each input key.
+        // This is buggy because inputs like T1 and T2 map to the same LED,
+        // creating a last-call-wins race. The hash key should be the mapped
+        // LED instead.
+        let mut input_highest_status_levels = HashMap::new();
+
+        for (input, status_level) in input_status_levels {
+            let input_status_level = input_highest_status_levels
+                .entry(input)
+                .or_insert(StatusLevel::Inactive);
+
+            // Replace this with `and_modify` above?
+            if status_level > *input_status_level {
+                *input_status_level = status_level.clone();
+            }
+        }
+
+        for (input, status_level) in input_highest_status_levels {
+            self.set_input_status_level(input, status_level);
+        }
+    }
+
+    fn set_input_status_level(&mut self, input: Input, status_level: StatusLevel) {
         self.set_led_from_input_and_status_level(&input, &status_level);
         self.input_state_levels.insert(input, status_level);
     }
