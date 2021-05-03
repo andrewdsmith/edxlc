@@ -47,6 +47,25 @@ pub enum StatusLevel {
     Alert,
 }
 
+enum Condition {
+    Any(StatusBitField),
+    All(StatusBitField),
+}
+
+struct ConditionStatusLevelMapping {
+    condition: Condition,
+    status_level: StatusLevel,
+}
+
+impl ConditionStatusLevelMapping {
+    fn new(condition: Condition, status_level: StatusLevel) -> Self {
+        Self {
+            condition,
+            status_level,
+        }
+    }
+}
+
 pub struct Ship {
     status_flags: StatusBitField,
 }
@@ -75,50 +94,63 @@ impl Ship {
 
         statuses.push(Status {
             attribute: Attribute::CargoScoop,
-            level: self.map_level_to_flag(StatusLevel::Active, CARGO_SCOOP_DEPLOYED),
+            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
+                Condition::All(CARGO_SCOOP_DEPLOYED),
+                StatusLevel::Active,
+            )]),
         });
         statuses.push(Status {
             attribute: Attribute::ExternalLights,
-            level: self.map_level_to_flag(StatusLevel::Active, EXTERNAL_LIGHTS_ON),
+            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
+                Condition::All(EXTERNAL_LIGHTS_ON),
+                StatusLevel::Active,
+            )]),
         });
         statuses.push(Status {
             attribute: Attribute::FrameShiftDrive,
-            level: self.map_flags_to_status(FRAME_SHIFT_DRIVE_CHARGING, FRAME_SHIFT_DRIVE_BLOCKED),
+            level: self.status_level_for_condition(vec![
+                ConditionStatusLevelMapping::new(
+                    Condition::Any(FRAME_SHIFT_DRIVE_BLOCKED),
+                    StatusLevel::Blocked,
+                ),
+                ConditionStatusLevelMapping::new(
+                    Condition::All(FRAME_SHIFT_DRIVE_CHARGING),
+                    StatusLevel::Active,
+                ),
+            ]),
         });
         statuses.push(Status {
             attribute: Attribute::LandingGear,
-            level: self.map_level_to_flag(StatusLevel::Active, LANDING_GEAR_DEPLOYED),
+            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
+                Condition::All(LANDING_GEAR_DEPLOYED),
+                StatusLevel::Active,
+            )]),
         });
         statuses.push(Status {
             attribute: Attribute::HeatSink,
-            level: self.map_level_to_flag(StatusLevel::Alert, OVERHEATING),
+            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
+                Condition::All(OVERHEATING),
+                StatusLevel::Alert,
+            )]),
         });
 
         statuses
     }
 
-    fn map_flags_to_status(
+    fn status_level_for_condition(
         &self,
-        active_flag: StatusBitField,
-        blocking_flag: StatusBitField,
+        mappings: Vec<ConditionStatusLevelMapping>,
     ) -> StatusLevel {
-        if self.is_status_flag_set(blocking_flag) {
-            StatusLevel::Blocked
-        } else {
-            self.map_level_to_flag(StatusLevel::Active, active_flag)
+        for mapping in mappings {
+            if match mapping.condition {
+                Condition::Any(flags) => self.status_flags & flags != 0,
+                Condition::All(flags) => self.status_flags & flags == flags,
+            } {
+                return mapping.status_level;
+            }
         }
-    }
 
-    fn map_level_to_flag(&self, status_level: StatusLevel, flag: StatusBitField) -> StatusLevel {
-        if self.is_status_flag_set(flag) {
-            status_level
-        } else {
-            StatusLevel::Inactive
-        }
-    }
-
-    fn is_status_flag_set(&self, flag: StatusBitField) -> bool {
-        (self.status_flags & flag) != 0
+        StatusLevel::Inactive
     }
 
     fn filtered_status_flags(flags: StatusBitField) -> StatusBitField {
