@@ -9,7 +9,7 @@ pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 /// controller device.
 pub struct Device {
     direct_output: DirectOutput,
-    input_state_levels: HashMap<Input, StatusLevel>,
+    led_status_levels: HashMap<LED, StatusLevel>,
     status_level_mapper: StatusLevelMapper,
 }
 
@@ -24,7 +24,7 @@ impl Device {
 
         Device {
             direct_output: direct_output,
-            input_state_levels: HashMap::new(),
+            led_status_levels: HashMap::new(),
             status_level_mapper: StatusLevelMapper::new(),
         }
     }
@@ -33,35 +33,30 @@ impl Device {
     /// different status levels are handled by using the highest value. The LED
     /// for the input is looked up, as is the LED state for the status level.
     pub fn set_input_status_levels(&mut self, input_status_levels: Vec<(Input, StatusLevel)>) {
-        // Build a hash of the highest status level value for each input key.
-        // This is buggy because inputs like T1 and T2 map to the same LED,
-        // creating a last-call-wins race. The hash key should be the mapped
-        // LED instead.
-        let mut input_highest_status_levels = HashMap::new();
+        // Build a hash of the highest status level keyed by led.
+        let mut led_highest_status_levels = HashMap::new();
 
         for (input, status_level) in input_status_levels {
-            let input_status_level = input_highest_status_levels
-                .entry(input)
+            let led = led_for_input(input);
+            let led_status_level = led_highest_status_levels
+                .entry(led)
                 .or_insert(StatusLevel::Inactive);
 
             // Replace this with `and_modify` above?
-            if status_level > *input_status_level {
-                *input_status_level = status_level.clone();
+            if status_level > *led_status_level {
+                *led_status_level = status_level.clone();
             }
         }
 
-        for (input, status_level) in input_highest_status_levels {
-            self.set_input_status_level(input, status_level);
+        for (led, status_level) in &led_highest_status_levels {
+            self.set_led_status_level(&led, &status_level);
         }
+
+        self.led_status_levels = led_highest_status_levels;
     }
 
-    fn set_input_status_level(&mut self, input: Input, status_level: StatusLevel) {
-        self.set_led_from_input_and_status_level(&input, &status_level);
-        self.input_state_levels.insert(input, status_level);
-    }
-
-    /// Set the given LED to the specified state.
-    fn set_led_state(&self, led: LED, state: LEDState) {
+    /// Set the given LED to the specified status level.
+    fn set_led_status_level(&self, led: &LED, status_level: &StatusLevel) {
         let (red_led_id, green_led_id) = match led {
             LED::Clutch => (17, 18),
             LED::FireA => (1, 2),
@@ -73,6 +68,7 @@ impl Device {
             LED::T5T6 => (13, 14),
         };
 
+        let state = self.status_level_mapper.led_state(status_level);
         let (red_led_state, green_led_state) = match state {
             LEDState::Red => (true, false),
             LEDState::Amber => (true, true),
@@ -89,23 +85,16 @@ impl Device {
     // Ideally the device would manage its own threading for animation but
     // this would require state updates to be communicated asynchronously.
     pub fn update_animated_leds(&self) {
-        for (input, status_level) in &self.input_state_levels {
+        for (led, status_level) in &self.led_status_levels {
             if *status_level == StatusLevel::Alert {
-                self.set_led_from_input_and_status_level(input, status_level);
+                self.set_led_status_level(led, status_level);
             }
         }
-    }
-
-    fn set_led_from_input_and_status_level(&self, input: &Input, status_level: &StatusLevel) {
-        self.set_led_state(
-            led_for_input(input),
-            self.status_level_mapper.led_state(status_level),
-        );
     }
 }
 
 /// Supported input buttons or axes on the device.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Input {
     Clutch,
     FireA,
@@ -121,7 +110,7 @@ pub enum Input {
 }
 
 /// Controllable LEDs on the devive.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 enum LED {
     Clutch,
     FireA,
@@ -143,7 +132,7 @@ enum LEDState {
 
 /// Returns the LED that corresponds to a given input. Note that in some cases,
 /// specifically the T buttons, multiple inputs share an LED.
-fn led_for_input(input: &Input) -> LED {
+fn led_for_input(input: Input) -> LED {
     match input {
         Input::Clutch => LED::Clutch,
         Input::FireA => LED::FireA,
@@ -215,7 +204,7 @@ mod tests {
     }
 
     fn assert_led_for_input(input: Input, led: LED) {
-        assert_eq!(led_for_input(&input), led);
+        assert_eq!(led_for_input(input), led);
     }
 
     #[test]

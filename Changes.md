@@ -2,8 +2,10 @@
 
 ## Version 1.5
 
-- Show correct states immediately, i.e. do not wait for first significant state
+- Shows correct states immediately, i.e. do not wait for first significant state
   change before updating.
+- Shows correct states consitently on buttons where one LED represents multiple
+  bound controls, e.g. on T1 and T2
 
 ## Version 1.4
 
