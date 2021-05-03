@@ -2,6 +2,8 @@
 
 ## Version 1.5
 
+- Shows alert state (red/yellow flashing) on FSD buttons when active but also
+  overheating
 - Shows correct states immediately, i.e. do not wait for first significant state
   change before updating.
 - Shows correct states consitently on buttons where one LED represents multiple

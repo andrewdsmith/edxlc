@@ -110,6 +110,10 @@ impl Ship {
             attribute: Attribute::FrameShiftDrive,
             level: self.status_level_for_condition(vec![
                 ConditionStatusLevelMapping::new(
+                    Condition::All(FRAME_SHIFT_DRIVE_CHARGING | OVERHEATING),
+                    StatusLevel::Alert,
+                ),
+                ConditionStatusLevelMapping::new(
                     Condition::Any(FRAME_SHIFT_DRIVE_BLOCKED),
                     StatusLevel::Blocked,
                 ),
@@ -244,6 +248,15 @@ mod tests {
             FRAME_SHIFT_DRIVE_CHARGING,
             Attribute::FrameShiftDrive,
             StatusLevel::Active,
+        );
+    }
+
+    #[test]
+    fn frame_shift_drive_charging_and_overheating_maps_to_frame_shift_drive_alert() {
+        assert_status(
+            FRAME_SHIFT_DRIVE_CHARGING + OVERHEATING,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Alert,
         );
     }
 
