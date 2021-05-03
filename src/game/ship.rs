@@ -23,7 +23,7 @@ const FRAME_SHIFT_DRIVE_BLOCKED: StatusBitField =
     CARGO_SCOOP_DEPLOYED | MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
 
 /// An attribute of a `Ship` that can be associated with a value.
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Attribute {
     CargoScoop,
     ExternalLights,
@@ -39,7 +39,7 @@ pub struct Status {
 }
 
 /// A status value that can associated to an `Attibute` through a `Status`
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum StatusLevel {
     Inactive,
     Active,
@@ -47,11 +47,15 @@ pub enum StatusLevel {
     Alert,
 }
 
+/// A condition that can be used to specify a `StatusLevel` through a
+/// `ConditionStatusLevelMapping`.
 enum Condition {
     Any(StatusBitField),
     All(StatusBitField),
 }
 
+/// A mapping that defines the `Condition` that indicates a `StatusLevel`
+/// applies.
 struct ConditionStatusLevelMapping {
     condition: Condition,
     status_level: StatusLevel,
@@ -66,14 +70,83 @@ impl ConditionStatusLevelMapping {
     }
 }
 
+/// A list of `ConditionStatusLevelMapping` instances that apply to an
+/// `Attribute`.
+struct AttributeStatusLevelMappings {
+    attribute: Attribute,
+    condition_status_level_mappings: Vec<ConditionStatusLevelMapping>,
+}
+
+impl AttributeStatusLevelMappings {
+    fn new(
+        attribute: Attribute,
+        condition_status_level_mappings: Vec<ConditionStatusLevelMapping>,
+    ) -> Self {
+        Self {
+            attribute,
+            condition_status_level_mappings,
+        }
+    }
+}
+
 pub struct Ship {
     status_flags: StatusBitField,
+    attribute_status_level_mappings: Vec<AttributeStatusLevelMappings>,
 }
 
 impl Ship {
     /// Returns a `Ship` instance.
     pub fn new() -> Self {
-        Self { status_flags: 0 }
+        Self {
+            status_flags: 0,
+            attribute_status_level_mappings: vec![
+                AttributeStatusLevelMappings::new(
+                    Attribute::CargoScoop,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(CARGO_SCOOP_DEPLOYED),
+                        StatusLevel::Active,
+                    )],
+                ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::ExternalLights,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(EXTERNAL_LIGHTS_ON),
+                        StatusLevel::Active,
+                    )],
+                ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::FrameShiftDrive,
+                    vec![
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(FRAME_SHIFT_DRIVE_CHARGING | OVERHEATING),
+                            StatusLevel::Alert,
+                        ),
+                        ConditionStatusLevelMapping::new(
+                            Condition::Any(FRAME_SHIFT_DRIVE_BLOCKED),
+                            StatusLevel::Blocked,
+                        ),
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(FRAME_SHIFT_DRIVE_CHARGING),
+                            StatusLevel::Active,
+                        ),
+                    ],
+                ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::LandingGear,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(LANDING_GEAR_DEPLOYED),
+                        StatusLevel::Active,
+                    )],
+                ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::HeatSink,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(OVERHEATING),
+                        StatusLevel::Alert,
+                    )],
+                ),
+            ],
+        }
     }
 
     pub fn update_status(&mut self, status: FileStatus) -> bool {
@@ -87,63 +160,30 @@ impl Ship {
         }
     }
 
+    #[cfg(test)]
+    fn set_status(&mut self, status_flags: StatusBitField) {
+        self.status_flags = status_flags;
+    }
+
     /// Returns a vector of `Status` instances, one each for every `Attribute`,
     /// specifying the current `StatusLevel` for that attribute.
     pub fn statuses(&self) -> Vec<Status> {
         let mut statuses = Vec::new();
 
-        statuses.push(Status {
-            attribute: Attribute::CargoScoop,
-            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
-                Condition::All(CARGO_SCOOP_DEPLOYED),
-                StatusLevel::Active,
-            )]),
-        });
-        statuses.push(Status {
-            attribute: Attribute::ExternalLights,
-            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
-                Condition::All(EXTERNAL_LIGHTS_ON),
-                StatusLevel::Active,
-            )]),
-        });
-        statuses.push(Status {
-            attribute: Attribute::FrameShiftDrive,
-            level: self.status_level_for_condition(vec![
-                ConditionStatusLevelMapping::new(
-                    Condition::All(FRAME_SHIFT_DRIVE_CHARGING | OVERHEATING),
-                    StatusLevel::Alert,
-                ),
-                ConditionStatusLevelMapping::new(
-                    Condition::Any(FRAME_SHIFT_DRIVE_BLOCKED),
-                    StatusLevel::Blocked,
-                ),
-                ConditionStatusLevelMapping::new(
-                    Condition::All(FRAME_SHIFT_DRIVE_CHARGING),
-                    StatusLevel::Active,
-                ),
-            ]),
-        });
-        statuses.push(Status {
-            attribute: Attribute::LandingGear,
-            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
-                Condition::All(LANDING_GEAR_DEPLOYED),
-                StatusLevel::Active,
-            )]),
-        });
-        statuses.push(Status {
-            attribute: Attribute::HeatSink,
-            level: self.status_level_for_condition(vec![ConditionStatusLevelMapping::new(
-                Condition::All(OVERHEATING),
-                StatusLevel::Alert,
-            )]),
-        });
+        // This should probably be done by functionally mapping the vector.
+        for mapping in &self.attribute_status_level_mappings {
+            statuses.push(Status {
+                attribute: mapping.attribute,
+                level: self.status_level_for_condition(&mapping.condition_status_level_mappings),
+            });
+        }
 
         statuses
     }
 
     fn status_level_for_condition(
         &self,
-        mappings: Vec<ConditionStatusLevelMapping>,
+        mappings: &Vec<ConditionStatusLevelMapping>,
     ) -> StatusLevel {
         for mapping in mappings {
             if match mapping.condition {
@@ -177,7 +217,7 @@ mod tests {
             FRAME_SHIFT_DRIVE_COOLDOWN,
             OVERHEATING,
         ] {
-            let mut ship = Ship { status_flags: 0 };
+            let mut ship = Ship::new();
 
             assert_eq!(ship.update_status(FileStatus { flags: flag }), true);
             assert_eq!(ship.update_status(FileStatus { flags: flag }), false);
@@ -185,7 +225,8 @@ mod tests {
     }
 
     fn assert_status(status_flags: u32, attribute: Attribute, level: StatusLevel) {
-        let ship = Ship { status_flags };
+        let mut ship = Ship::new();
+        ship.set_status(status_flags);
         let statuses = ship.statuses();
         let status = statuses
             .iter()
