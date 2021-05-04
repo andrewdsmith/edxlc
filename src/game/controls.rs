@@ -23,6 +23,7 @@ pub enum Control {
     Hyperspace,
     HyperSuperCombination,
     LandingGear,
+    SilentRunning,
     Supercruise,
 }
 
@@ -55,6 +56,7 @@ impl Controls {
             Control::Hyperspace => &self.file.hyperspace,
             Control::HyperSuperCombination => &self.file.hyper_super_combo,
             Control::LandingGear => &self.file.landing_gear,
+            Control::SilentRunning => &self.file.silent_running,
             Control::Supercruise => &self.file.supercruise,
         };
 
@@ -110,6 +112,7 @@ mod tests {
             hyper_super_combo: ControlBinding::new((X52PRO_DEVICE, X52PRO_T1), ("", "")),
             supercruise: ControlBinding::new((X52PRO_DEVICE, X52PRO_T3), ("", "")),
             hyperspace: ControlBinding::new((X52PRO_DEVICE, X52PRO_T5), ("", "")),
+            silent_running: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_A), ("", "")),
             heat_sink: ControlBinding::new((X52PRO_DEVICE, X52PRO_T6), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
@@ -137,6 +140,10 @@ mod tests {
         assert_eq!(
             controls.inputs_for_control(Control::Hyperspace),
             vec![Input::T5]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::SilentRunning),
+            vec![Input::FireA]
         );
         assert_eq!(
             controls.inputs_for_control(Control::HeatSink),

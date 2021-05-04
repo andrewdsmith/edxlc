@@ -6,6 +6,7 @@ type StatusBitField = u32;
 const LANDING_GEAR_DEPLOYED: StatusBitField = 1 << 2;
 const EXTERNAL_LIGHTS_ON: StatusBitField = 1 << 8;
 const CARGO_SCOOP_DEPLOYED: StatusBitField = 1 << 9;
+const SILENT_RUNNING: StatusBitField = 1 << 10;
 const MASS_LOCKED: StatusBitField = 1 << 16;
 const FRAME_SHIFT_DRIVE_CHARGING: StatusBitField = 1 << 17;
 const FRAME_SHIFT_DRIVE_COOLDOWN: StatusBitField = 1 << 18;
@@ -17,7 +18,8 @@ const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | FRAME_SHIFT_DRIVE_CHARGING
     | MASS_LOCKED
     | FRAME_SHIFT_DRIVE_COOLDOWN
-    | OVERHEATING;
+    | OVERHEATING
+    | SILENT_RUNNING;
 
 const FRAME_SHIFT_DRIVE_BLOCKED: StatusBitField =
     CARGO_SCOOP_DEPLOYED | MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
@@ -30,6 +32,7 @@ pub enum Attribute {
     FrameShiftDrive,
     HeatSink,
     LandingGear,
+    SilentRunning,
 }
 
 /// An association of a `Attribute` to a `StatusLevel` value for a `Ship`.
@@ -145,6 +148,19 @@ impl Ship {
                         StatusLevel::Alert,
                     )],
                 ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::SilentRunning,
+                    vec![
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(SILENT_RUNNING | OVERHEATING),
+                            StatusLevel::Alert,
+                        ),
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(SILENT_RUNNING),
+                            StatusLevel::Active,
+                        ),
+                    ],
+                ),
             ],
         }
     }
@@ -212,6 +228,7 @@ mod tests {
             LANDING_GEAR_DEPLOYED,
             EXTERNAL_LIGHTS_ON,
             CARGO_SCOOP_DEPLOYED,
+            SILENT_RUNNING,
             FRAME_SHIFT_DRIVE_CHARGING,
             MASS_LOCKED,
             FRAME_SHIFT_DRIVE_COOLDOWN,
@@ -254,6 +271,11 @@ mod tests {
     #[test]
     fn zero_state_maps_to_landing_gear_inactive() {
         assert_status(0, Attribute::LandingGear, StatusLevel::Inactive);
+    }
+
+    #[test]
+    fn zero_state_maps_to_silent_running_inactive() {
+        assert_status(0, Attribute::SilentRunning, StatusLevel::Inactive);
     }
 
     #[test]
@@ -331,5 +353,22 @@ mod tests {
     #[test]
     fn overheating_maps_to_heat_sink_alert() {
         assert_status(OVERHEATING, Attribute::HeatSink, StatusLevel::Alert);
+    }
+    #[test]
+    fn silent_running_maps_to_silent_running_active() {
+        assert_status(
+            SILENT_RUNNING,
+            Attribute::SilentRunning,
+            StatusLevel::Active,
+        );
+    }
+
+    #[test]
+    fn silent_running_and_overheating_maps_to_silent_running_alert() {
+        assert_status(
+            SILENT_RUNNING + OVERHEATING,
+            Attribute::SilentRunning,
+            StatusLevel::Alert,
+        );
     }
 }

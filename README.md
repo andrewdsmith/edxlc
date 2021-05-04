@@ -10,6 +10,7 @@ Currently the app detects if you activate any of the following:
 - Cargo scoop
 - External lights
 - Frame shift drive
+- Silent running
 
 When activated, any button on your X52 Pro (except currently Fire and POV 2)
 configured to control the item in question will turn yellow when activated.

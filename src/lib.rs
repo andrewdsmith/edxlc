@@ -92,6 +92,7 @@ pub fn run() {
                             ],
                             Attribute::HeatSink => vec![Control::HeatSink],
                             Attribute::LandingGear => vec![Control::LandingGear],
+                            Attribute::SilentRunning => vec![Control::SilentRunning],
                         }
                     }
 

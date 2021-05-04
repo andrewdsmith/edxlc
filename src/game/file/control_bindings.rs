@@ -19,6 +19,8 @@ pub struct ControlBindings {
     pub supercruise: ControlBinding,
     #[serde(rename = "Hyperspace")]
     pub hyperspace: ControlBinding,
+    #[serde(rename = "ToggleButtonUpInput")]
+    pub silent_running: ControlBinding,
     #[serde(rename = "DeployHeatSink")]
     pub heat_sink: ControlBinding,
 }
@@ -106,9 +108,13 @@ mod tests {
                     <Primary Device="D11" Key="K11" />
                     <Secondary Device="D12" Key="K12" />
                 </Hyperspace>
-                <DeployHeatSink>
+                <ToggleButtonUpInput>
                     <Primary Device="D13" Key="K13" />
                     <Secondary Device="D14" Key="K14" />
+                </ToggleButtonUpInput>
+                <DeployHeatSink>
+                    <Primary Device="D15" Key="K15" />
+                    <Secondary Device="D16" Key="K16" />
                 </DeployHeatSink>
             </Root>
             "#,
@@ -121,7 +127,8 @@ mod tests {
             hyper_super_combo: ControlBinding::new(("D7", "K7"), ("D8", "K8")),
             supercruise: ControlBinding::new(("D9", "K9"), ("D10", "K10")),
             hyperspace: ControlBinding::new(("D11", "K11"), ("D12", "K12")),
-            heat_sink: ControlBinding::new(("D13", "K13"), ("D14", "K14")),
+            silent_running: ControlBinding::new(("D13", "K13"), ("D14", "K14")),
+            heat_sink: ControlBinding::new(("D15", "K15"), ("D16", "K16")),
         };
 
         assert_eq!(ControlBindings::from_str(xml), expected);
