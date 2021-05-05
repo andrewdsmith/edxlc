@@ -73,6 +73,7 @@ impl Device {
             LEDState::Red => (true, false),
             LEDState::Amber => (true, true),
             LEDState::Green => (false, true),
+            _ => panic!("Unable to set unmapped LED state"),
         };
 
         self.direct_output.set_led(red_led_id, red_led_state);
@@ -86,9 +87,9 @@ impl Device {
     // this would require state updates to be communicated asynchronously.
     pub fn update_animated_leds(&self) {
         for (led, status_level) in &self.led_status_levels {
-            if *status_level == StatusLevel::Alert {
-                self.set_led_status_level(led, status_level);
-            }
+            // Could query the mapper to see if the LED is in an animated state
+            // and only update it if necessary here.
+            self.set_led_status_level(led, status_level);
         }
     }
 }
@@ -123,11 +124,12 @@ enum LED {
 }
 
 /// Available states for LEDs on the device.
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum LEDState {
     Red,
     Amber,
     Green,
+    FlashingRedAmber,
 }
 
 /// Returns the LED that corresponds to a given input. Note that in some cases,
@@ -151,6 +153,10 @@ fn led_for_input(input: Input) -> LED {
 /// An mapper that returns an `LEDState` for a given `StateLevel`. The mapping
 /// depends on time to support animated (flashing) states.
 struct StatusLevelMapper {
+    inactive: LEDState,
+    active: LEDState,
+    blocked: LEDState,
+    alert: LEDState,
     reference_time: SystemTime,
 }
 
@@ -158,6 +164,10 @@ impl StatusLevelMapper {
     /// Returns a new instance the mapper.
     pub fn new() -> Self {
         Self {
+            inactive: LEDState::Green,
+            active: LEDState::Amber,
+            blocked: LEDState::Red,
+            alert: LEDState::FlashingRedAmber,
             reference_time: SystemTime::now(),
         }
     }
@@ -168,18 +178,22 @@ impl StatusLevelMapper {
     // levels to LED states, meaning animated states need only be calculated
     // once.
     fn led_state(&self, status_level: &StatusLevel) -> LEDState {
-        match status_level {
-            StatusLevel::Inactive => LEDState::Green,
-            StatusLevel::Active => LEDState::Amber,
-            StatusLevel::Blocked => LEDState::Red,
-            StatusLevel::Alert => {
-                let millis = self.reference_time.elapsed().unwrap().as_millis();
-                if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
-                    LEDState::Red
-                } else {
-                    LEDState::Amber
-                }
+        let led_state = match status_level {
+            StatusLevel::Inactive => self.inactive,
+            StatusLevel::Active => self.active,
+            StatusLevel::Blocked => self.blocked,
+            StatusLevel::Alert => self.alert,
+        };
+
+        if led_state == LEDState::FlashingRedAmber {
+            let millis = self.reference_time.elapsed().unwrap().as_millis();
+            if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
+                LEDState::Red
+            } else {
+                LEDState::Amber
             }
+        } else {
+            led_state
         }
     }
 }
