@@ -16,16 +16,16 @@ pub struct Device {
 impl Device {
     /// Returns a new instance of the device interface. Panics if the
     /// underlying `DirectOutput` instance cannot be loaded.
-    pub fn new() -> Self {
+    pub fn new(status_level_mapper: StatusLevelMapper) -> Self {
         let mut direct_output = DirectOutput::load();
         direct_output.initialize();
         direct_output.enumerate();
         direct_output.add_page();
 
         Device {
-            direct_output: direct_output,
+            direct_output,
             led_status_levels: HashMap::new(),
-            status_level_mapper: StatusLevelMapper::new(),
+            status_level_mapper,
         }
     }
 
@@ -152,7 +152,7 @@ fn led_for_input(input: Input) -> LED {
 
 /// An mapper that returns an `LEDState` for a given `StateLevel`. The mapping
 /// depends on time to support animated (flashing) states.
-struct StatusLevelMapper {
+pub struct StatusLevelMapper {
     inactive: LEDState,
     active: LEDState,
     blocked: LEDState,

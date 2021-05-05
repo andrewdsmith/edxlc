@@ -26,7 +26,7 @@ pub fn run() {
     info!("EDXLC {}", VERSION);
     info!("Press Ctrl+C to exit");
 
-    let mut x52pro = x52pro::Device::new();
+    let mut x52pro = x52pro::Device::new(x52pro::device::StatusLevelMapper::new());
 
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);
