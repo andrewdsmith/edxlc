@@ -10,6 +10,10 @@ use log::{debug, info};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
+use x52pro::{
+    device::{LEDState, StatusLevelMapper},
+    Device,
+};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
@@ -26,7 +30,12 @@ pub fn run() {
     info!("EDXLC {}", VERSION);
     info!("Press Ctrl+C to exit");
 
-    let mut x52pro = x52pro::Device::new(x52pro::device::StatusLevelMapper::new());
+    let mut x52pro = Device::new(StatusLevelMapper::new(
+        LEDState::Green,
+        LEDState::Amber,
+        LEDState::Red,
+        LEDState::FlashingRedAmber,
+    ));
 
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);

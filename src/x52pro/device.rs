@@ -125,7 +125,7 @@ enum LED {
 
 /// Available states for LEDs on the device.
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum LEDState {
+pub enum LEDState {
     Red,
     Amber,
     Green,
@@ -162,12 +162,12 @@ pub struct StatusLevelMapper {
 
 impl StatusLevelMapper {
     /// Returns a new instance the mapper.
-    pub fn new() -> Self {
+    pub fn new(inactive: LEDState, active: LEDState, blocked: LEDState, alert: LEDState) -> Self {
         Self {
-            inactive: LEDState::Green,
-            active: LEDState::Amber,
-            blocked: LEDState::Red,
-            alert: LEDState::FlashingRedAmber,
+            inactive,
+            active,
+            blocked,
+            alert,
             reference_time: SystemTime::now(),
         }
     }
@@ -226,10 +226,16 @@ mod tests {
         assert_led_state_for_status_level(StatusLevel::Inactive, LEDState::Green);
         assert_led_state_for_status_level(StatusLevel::Active, LEDState::Amber);
         assert_led_state_for_status_level(StatusLevel::Blocked, LEDState::Red);
+        assert_led_state_for_status_level(StatusLevel::Alert, LEDState::Red);
     }
 
     fn assert_led_state_for_status_level(status_level: StatusLevel, led_state: LEDState) {
-        let status_level_mapper = StatusLevelMapper::new();
+        let status_level_mapper = StatusLevelMapper::new(
+            LEDState::Green,
+            LEDState::Amber,
+            LEDState::Red,
+            LEDState::FlashingRedAmber,
+        );
         assert_eq!(status_level_mapper.led_state(&status_level), led_state);
     }
 }
