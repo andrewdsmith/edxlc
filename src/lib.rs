@@ -11,7 +11,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-const VERSION: &str = "1.5";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
 
 #[cfg(debug_assertions)]
