@@ -1,5 +1,10 @@
 # Changes
 
+## Version 1.6
+
+- Reads configuration from `edxlc.toml` file in the current working directory
+- Writes default `edxlc.toml` configuration file if missing
+
 ## Version 1.5
 
 - Shows active state (yellow) on silent running buttons

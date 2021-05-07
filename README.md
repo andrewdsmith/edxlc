@@ -25,6 +25,10 @@ For example when overheating, the heat sink button flashes.
 The app reads the control bindings from the custom bindings file (Horizons not
 Odyssey) so if you're using any other pre-defined set of bindings it won't work.
 
+The colours used by the app can be configured by editing the `edxlc.toml` file.
+This file is created automatically when the app is first run if it does not
+exist. You must restart the app to pick up changes in configuration.
+
 The intent is that over time more buttons, controls and states will be
 supported. Additionally, the app will become configurable to set the desired
 colours for conditions such as active, in use and alert.

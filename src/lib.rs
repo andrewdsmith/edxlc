@@ -1,7 +1,9 @@
+mod config;
 mod events;
 mod game;
 mod x52pro;
 
+use config::Config;
 use events::Event;
 use game::file::Status;
 use game::{Attribute, Control, Controls, Ship};
@@ -10,10 +12,7 @@ use log::{debug, info};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use x52pro::{
-    device::{LEDState, StatusLevelMapper},
-    Device,
-};
+use x52pro::Device;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
@@ -30,12 +29,11 @@ pub fn run() {
     info!("EDXLC {}", VERSION);
     info!("Press Ctrl+C to exit");
 
-    let mut x52pro = Device::new(StatusLevelMapper::new(
-        LEDState::Green,
-        LEDState::Amber,
-        LEDState::Red,
-        LEDState::FlashingRedAmber,
-    ));
+    config::write_default_file_if_missing();
+    let config = Config::from_file();
+    debug!("{:?}", config);
+
+    let mut x52pro = Device::new(config.status_level_mapper());
 
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);

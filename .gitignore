@@ -1,1 +1,4 @@
 /target
+
+# Written out automatically when executing `cargo run`.
+edxlc.toml
