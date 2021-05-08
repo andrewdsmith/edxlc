@@ -83,39 +83,10 @@ pub fn run() {
     for event in rx {
         match event {
             Event::Exit => break,
-            Event::AnimationTick => {
-                x52pro.update_animated_leds();
-            }
+            Event::AnimationTick => x52pro.update_animated_leds(),
             Event::StatusUpdate(status) => {
                 if ship.update_status(status) {
-                    fn controls_for_status(status: &game::Status) -> Vec<Control> {
-                        match status.attribute {
-                            Attribute::CargoScoop => vec![Control::CargoScoop],
-                            Attribute::ExternalLights => vec![Control::ExternalLights],
-                            Attribute::FrameShiftDrive => vec![
-                                Control::Hyperspace,
-                                Control::HyperSuperCombination,
-                                Control::Supercruise,
-                            ],
-                            Attribute::HeatSink => vec![Control::HeatSink],
-                            Attribute::LandingGear => vec![Control::LandingGear],
-                            Attribute::SilentRunning => vec![Control::SilentRunning],
-                        }
-                    }
-
-                    let mut input_status_levels = Vec::new();
-
-                    // This can probably be written functionally by mapping.
-                    for status in ship.statuses() {
-                        for control in controls_for_status(&status) {
-                            for input in controls.inputs_for_control(control) {
-                                debug!("Input={:?}, StatusLevel={:?}", input, status.level);
-                                input_status_levels.push((input, status.level.clone()));
-                            }
-                        }
-                    }
-
-                    x52pro.set_input_status_levels(input_status_levels);
+                    set_x52pro_inputs_from_ship_statues(&mut x52pro, &controls, ship.statuses());
                 } else {
                     debug!("Status file updated but change not relevant");
                 }
@@ -124,4 +95,39 @@ pub fn run() {
     }
 
     info!("Exiting");
+}
+
+fn set_x52pro_inputs_from_ship_statues(
+    x52pro: &mut Device,
+    controls: &Controls,
+    statuses: Vec<game::Status>,
+) {
+    fn controls_for_status(status: &game::Status) -> Vec<Control> {
+        match status.attribute {
+            Attribute::CargoScoop => vec![Control::CargoScoop],
+            Attribute::ExternalLights => vec![Control::ExternalLights],
+            Attribute::FrameShiftDrive => vec![
+                Control::Hyperspace,
+                Control::HyperSuperCombination,
+                Control::Supercruise,
+            ],
+            Attribute::HeatSink => vec![Control::HeatSink],
+            Attribute::LandingGear => vec![Control::LandingGear],
+            Attribute::SilentRunning => vec![Control::SilentRunning],
+        }
+    }
+
+    let mut input_status_levels = Vec::new();
+
+    // This can probably be written functionally by mapping.
+    for status in statuses {
+        for control in controls_for_status(&status) {
+            for input in controls.inputs_for_control(control) {
+                debug!("Input={:?}, StatusLevel={:?}", input, status.level);
+                input_status_levels.push((input, status.level.clone()));
+            }
+        }
+    }
+
+    x52pro.set_input_status_levels(input_status_levels);
 }
