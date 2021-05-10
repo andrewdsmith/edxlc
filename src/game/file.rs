@@ -1,6 +1,8 @@
 mod control_bindings;
 
+use chrono::Local;
 pub use control_bindings::*;
+use glob::glob;
 use log::debug;
 use serde::Deserialize;
 use std::fs;
@@ -10,6 +12,32 @@ pub fn bindings_file_path() -> PathBuf {
     dirs::data_local_dir()
         .expect("Can't find user app data directory")
         .join(r#"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.3.0.binds"#)
+}
+
+/// Optionally returns a `PathBuf` for the latest journal file if one is found.
+pub fn latest_journal_file_path() -> Option<PathBuf> {
+    let date = Local::now();
+    let journal_file_pattern = dirs::home_dir()
+        .expect("Can't find user home directory")
+        .join(format!(
+            r#"Saved Games\Frontier Developments\Elite Dangerous\Journal*.{}*"#,
+            date.format("%y%m")
+        ));
+    let journal_file_pattern = journal_file_pattern
+        .to_str()
+        .expect("Can't convert user home directory to UTF-8");
+
+    debug!("Journal file pattern: {:?}", journal_file_pattern);
+
+    glob(journal_file_pattern)
+        .expect("Can't search for journal files")
+        .filter_map(Result::ok)
+        .max_by_key(|path| {
+            path.metadata()
+                .expect("Can't get journal file metadata")
+                .modified()
+                .expect("Can't get journal file modified date")
+        })
 }
 
 pub fn status_file_path() -> PathBuf {

@@ -44,6 +44,12 @@ pub fn run() {
     let status_file_path = game::file::status_file_path();
     debug!("Status file path: {:?}", status_file_path);
 
+    if let Some(journal_file_path) = game::file::latest_journal_file_path() {
+        debug!("Journal file path: {:?}", journal_file_path);
+    } else {
+        debug!("No latest journal file found");
+    }
+
     let mut ship = Ship::new();
     let (tx, rx) = mpsc::channel();
 

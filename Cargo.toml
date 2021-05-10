@@ -19,6 +19,8 @@ ctrlc = "3.0"
 log = "0.4.0"
 env_logger = "0.8.3"
 toml = "0.5"
+glob = "0.3.0"
+chrono = "0.4"
 
 [build-dependencies]
 embed-resource = "1.6"
