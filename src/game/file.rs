@@ -1,4 +1,5 @@
 mod control_bindings;
+pub mod journal;
 
 use chrono::Local;
 pub use control_bindings::*;
