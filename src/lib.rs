@@ -57,6 +57,12 @@ pub fn run() {
     let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
         .expect("File watcher failed to initialize");
 
+    if let Some(journal_file_path) = game::file::latest_journal_file_path() {
+        game::file::journal::watch(journal_file_path, &mut hotwatch, &tx);
+    } else {
+        debug!("No latest journal file found");
+    }
+
     hotwatch
         .watch(status_file_path, move |event: hotwatch::Event| {
             if let hotwatch::Event::Write(path) = event {
@@ -67,12 +73,6 @@ pub fn run() {
             }
         })
         .expect("Failed to watch status file");
-
-    if let Some(journal_file_path) = game::file::latest_journal_file_path() {
-        game::file::journal::watch(journal_file_path, &mut hotwatch);
-    } else {
-        debug!("No latest journal file found");
-    }
 
     ctrlc::set_handler(move || {
         info!("Received Ctrl+C");
@@ -97,6 +97,8 @@ pub fn run() {
                     debug!("Status file updated but change not relevant");
                 }
             }
+            // Here is where we will update the ship status based on the journal event.
+            Event::JournalEvent(journal_event) => info!("Journal event {:?}", journal_event),
         }
     }
 

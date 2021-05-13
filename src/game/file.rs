@@ -47,7 +47,7 @@ pub fn status_file_path() -> PathBuf {
         .join(r#"Saved Games\Frontier Developments\Elite Dangerous\Status.json"#)
 }
 
-#[derive(Deserialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct Status {
     #[serde(rename = "Flags")]
     pub flags: u32,
