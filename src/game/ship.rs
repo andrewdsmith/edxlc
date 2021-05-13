@@ -1,6 +1,6 @@
 use super::file::Status as FileStatus;
 
-type StatusBitField = u32;
+type StatusBitField = u64;
 
 // See: https://elite-journal.readthedocs.io/en/latest/Status%20File/
 const LANDING_GEAR_DEPLOYED: StatusBitField = 1 << 2;
@@ -166,7 +166,7 @@ impl Ship {
     }
 
     pub fn update_status(&mut self, status: FileStatus) -> bool {
-        let updated_status_flags = Self::filtered_status_flags(status.flags);
+        let updated_status_flags = Self::filtered_status_flags(status.flags as u64);
 
         if self.status_flags == updated_status_flags {
             false
@@ -236,12 +236,12 @@ mod tests {
         ] {
             let mut ship = Ship::new();
 
-            assert_eq!(ship.update_status(FileStatus { flags: flag }), true);
-            assert_eq!(ship.update_status(FileStatus { flags: flag }), false);
+            assert_eq!(ship.update_status(FileStatus { flags: flag as u32 }), true);
+            assert_eq!(ship.update_status(FileStatus { flags: flag as u32 }), false);
         }
     }
 
-    fn assert_status(status_flags: u32, attribute: Attribute, level: StatusLevel) {
+    fn assert_status(status_flags: StatusBitField, attribute: Attribute, level: StatusLevel) {
         let mut ship = Ship::new();
         ship.set_status(status_flags);
         let statuses = ship.statuses();
