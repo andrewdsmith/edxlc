@@ -97,8 +97,11 @@ pub fn run() {
                     debug!("Status file updated but change not relevant");
                 }
             }
-            // Here is where we will update the ship status based on the journal event.
-            Event::JournalEvent(journal_event) => info!("Journal event {:?}", journal_event),
+            Event::JournalEvent(journal_event) => {
+                info!("Journal event {:?}", journal_event);
+                ship.apply_journal_event(journal_event);
+                set_x52pro_inputs_from_ship_statues(&mut x52pro, &controls, ship.statuses());
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-use super::file::Status as FileStatus;
+use super::file::{journal::Event, Status as FileStatus};
 
 type StatusBitField = u64;
 
@@ -11,6 +11,9 @@ const MASS_LOCKED: StatusBitField = 1 << 16;
 const FRAME_SHIFT_DRIVE_CHARGING: StatusBitField = 1 << 17;
 const FRAME_SHIFT_DRIVE_COOLDOWN: StatusBitField = 1 << 18;
 const OVERHEATING: StatusBitField = 1 << 20;
+
+// These statuses are derived from journal events and use the unused high bits.
+const DOCKING: StatusBitField = 1 << (32 + 16);
 
 const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | CARGO_SCOOP_DEPLOYED
@@ -136,10 +139,16 @@ impl Ship {
                 ),
                 AttributeStatusLevelMappings::new(
                     Attribute::LandingGear,
-                    vec![ConditionStatusLevelMapping::new(
-                        Condition::All(LANDING_GEAR_DEPLOYED),
-                        StatusLevel::Active,
-                    )],
+                    vec![
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(LANDING_GEAR_DEPLOYED),
+                            StatusLevel::Active,
+                        ),
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(DOCKING),
+                            StatusLevel::Alert,
+                        ),
+                    ],
                 ),
                 AttributeStatusLevelMappings::new(
                     Attribute::HeatSink,
@@ -163,6 +172,14 @@ impl Ship {
                 ),
             ],
         }
+    }
+
+    /// Updates the ship statuses give the event.
+    pub fn apply_journal_event(&mut self, event: Event) {
+        match event {
+            Event::DockingGranted => self.status_flags |= DOCKING,
+            _ => panic!("Unsupported event {:?}", event),
+        };
     }
 
     pub fn update_status(&mut self, status: FileStatus) -> bool {
@@ -339,6 +356,11 @@ mod tests {
             Attribute::LandingGear,
             StatusLevel::Active,
         );
+    }
+
+    #[test]
+    fn landing_gear_not_deployed_and_docking_maps_to_landing_gear_alert() {
+        assert_status(DOCKING, Attribute::LandingGear, StatusLevel::Alert);
     }
 
     #[test]
