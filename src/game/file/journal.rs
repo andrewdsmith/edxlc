@@ -49,7 +49,9 @@ where
         != 0
     {
         // Could collapse duplicate and redundant events here, i.e. when
-        // reading an existing journal file at start-up.
+        // reading an existing journal file at start-up. Alternatively collect
+        // all events and then indicate which one is the last to delay device
+        // updates until the end.
         match parser(&line) {
             Event::Other => (),
             event => {
@@ -73,7 +75,10 @@ fn event_from_json(json: &str) -> Event {
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(tag = "event")]
 pub enum Event {
+    Docked,
+    DockingCancelled,
     DockingGranted,
+    DockingTimeout,
     #[serde(other)]
     Other,
 }
@@ -111,9 +116,27 @@ mod tests {
     fn event_from_json_returns_parsed_journal_events() {
         assert_eq!(
             event_from_json(
+                r#"{ "timestamp":"2021-05-14T00:00:00Z", "event":"Docked", "StationName":"A", "StationType":"B", "StarSystem":"C", "SystemAddress":1, "MarketID":2, "StationFaction":{ "Name":"D" }, "StationGovernment":"E", "StationGovernment_Localised":"F", "StationAllegiance":"G", "StationServices":[ "H" ], "StationEconomy":"I", "StationEconomy_Localised":"J", "StationEconomies":[ { "Name":"K", "Name_Localised":"L", "Proportion":3.0 } ], "DistFromStarLS":4.0 }"#
+            ),
+            Event::Docked
+        );
+        assert_eq!(
+            event_from_json(
+                r#"{ "timestamp":"2021-05-13T00:00:00Z", "event":"DockingCancelled", "MarketID":1, "StationName":"A", "StationType":"B" }"#
+            ),
+            Event::DockingCancelled
+        );
+        assert_eq!(
+            event_from_json(
                 r#"{ "timestamp":"2021-05-12T00:00:00Z", "event":"DockingGranted", "LandingPad":1, "MarketID":1, "StationName":"A", "StationType":"B" }"#
             ),
             Event::DockingGranted
+        );
+        assert_eq!(
+            event_from_json(
+                r#"{ "timestamp":"2021-05-14T00:00:00Z", "event":"DockingTimeout", "MarketID":1, "StationName":"A", "StationType":"B" }"#
+            ),
+            Event::DockingTimeout
         );
         assert_eq!(
             event_from_json(

@@ -4,8 +4,7 @@
 
 - Reads configuration from `edxlc.toml` file in the current working directory
 - Writes default `edxlc.toml` configuration file if missing
-- Shows alert state on landing gear buttons if not deployed while docking
-  (but currently broken as the state never clears)
+- Shows alert state for landing gear if not deployed while docking
 
 ## Version 1.5
 

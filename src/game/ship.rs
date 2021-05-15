@@ -1,4 +1,5 @@
 use super::file::{journal::Event, Status as FileStatus};
+use log::{info, warn};
 
 type StatusBitField = u64;
 
@@ -177,23 +178,31 @@ impl Ship {
     /// Updates the ship statuses give the event.
     pub fn apply_journal_event(&mut self, event: Event) {
         match event {
-            Event::DockingGranted => self.status_flags |= DOCKING,
-            _ => panic!("Unsupported event {:?}", event),
+            Event::Docked | Event::DockingCancelled | Event::DockingTimeout => {
+                info!("Docking terminated");
+                self.status_flags &= !DOCKING
+            }
+            Event::DockingGranted => {
+                info!("Docking commenced");
+                self.status_flags |= DOCKING
+            }
+            Event::Other => warn!("Can't apply `Event::Other` journal event"),
         };
     }
 
     pub fn update_status(&mut self, status: FileStatus) -> bool {
         let updated_status_flags = Self::filtered_status_flags(status.flags as u64);
 
-        if self.status_flags == updated_status_flags {
+        if Self::filtered_status_flags(self.status_flags) == updated_status_flags {
             false
         } else {
-            self.status_flags = updated_status_flags;
+            self.status_flags = updated_status_flags | (self.status_flags & DOCKING);
             true
         }
     }
 
     #[cfg(test)]
+    // Could refactor this into a private constructor instead.
     fn set_status(&mut self, status_flags: StatusBitField) {
         self.status_flags = status_flags;
     }
@@ -221,13 +230,17 @@ impl Ship {
         for mapping in mappings {
             if match mapping.condition {
                 Condition::Any(flags) => self.status_flags & flags != 0,
-                Condition::All(flags) => self.status_flags & flags == flags,
+                Condition::All(flags) => self.all_status_flags_set(flags),
             } {
                 return mapping.status_level;
             }
         }
 
         StatusLevel::Inactive
+    }
+
+    fn all_status_flags_set(&self, flags: StatusBitField) -> bool {
+        self.status_flags & flags == flags
     }
 
     fn filtered_status_flags(flags: StatusBitField) -> StatusBitField {
@@ -239,9 +252,8 @@ impl Ship {
 mod tests {
     use super::*;
 
-    #[test]
-    fn ship_update_status_returns_true_on_change() {
-        for flag in vec![
+    fn statuses() -> Vec<StatusBitField> {
+        vec![
             LANDING_GEAR_DEPLOYED,
             EXTERNAL_LIGHTS_ON,
             CARGO_SCOOP_DEPLOYED,
@@ -250,12 +262,45 @@ mod tests {
             MASS_LOCKED,
             FRAME_SHIFT_DRIVE_COOLDOWN,
             OVERHEATING,
-        ] {
-            let mut ship = Ship::new();
+        ]
+    }
 
+    #[test]
+    fn ship_update_status_sets_statuses() {
+        for flag in statuses() {
+            let mut ship = Ship::new();
+            ship.update_status(FileStatus { flags: flag as u32 });
+            assert_eq!(ship.all_status_flags_set(flag), true);
+        }
+    }
+
+    #[test]
+    fn ship_update_status_clears_statuses() {
+        for flag in statuses() {
+            let mut ship = Ship::new();
+            ship.set_status(flag);
+            ship.update_status(FileStatus { flags: 0 });
+            assert_eq!(ship.all_status_flags_set(flag), false);
+        }
+    }
+
+    #[test]
+    fn ship_update_status_returns_true_on_change() {
+        for flag in statuses() {
+            let mut ship = Ship::new();
             assert_eq!(ship.update_status(FileStatus { flags: flag as u32 }), true);
             assert_eq!(ship.update_status(FileStatus { flags: flag as u32 }), false);
         }
+    }
+
+    #[test]
+    fn ship_update_status_does_not_clobber_derived_states() {
+        let mut ship = Ship::new();
+        ship.set_status(DOCKING);
+        ship.update_status(FileStatus {
+            flags: LANDING_GEAR_DEPLOYED as u32,
+        });
+        assert_eq!(ship.all_status_flags_set(DOCKING), true);
     }
 
     fn assert_status(status_flags: StatusBitField, attribute: Attribute, level: StatusLevel) {
