@@ -1,7 +1,6 @@
 mod control_bindings;
 pub mod journal;
 
-use chrono::Local;
 pub use control_bindings::*;
 use glob::glob;
 use log::debug;
@@ -15,15 +14,18 @@ pub fn bindings_file_path() -> PathBuf {
         .join(r#"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.3.0.binds"#)
 }
 
+/// Returns a `PathBuf` for the directory containing the game's journal files.
+pub fn journal_dir_path() -> PathBuf {
+    dirs::home_dir()
+        .expect("Can't find user home directory")
+        .join(r#"Saved Games\Frontier Developments\Elite Dangerous"#) // TODO const & use below
+}
+
 /// Optionally returns a `PathBuf` for the latest journal file if one is found.
 pub fn latest_journal_file_path() -> Option<PathBuf> {
-    let date = Local::now();
     let journal_file_pattern = dirs::home_dir()
         .expect("Can't find user home directory")
-        .join(format!(
-            r#"Saved Games\Frontier Developments\Elite Dangerous\Journal*.{}*"#,
-            date.format("%y%m")
-        ));
+        .join(r#"Saved Games\Frontier Developments\Elite Dangerous\Journal*.log"#);
     let journal_file_pattern = journal_file_pattern
         .to_str()
         .expect("Can't convert user home directory to UTF-8");

@@ -5,7 +5,7 @@ mod x52pro;
 
 use config::Config;
 use events::Event;
-use game::file::Status;
+use game::{file::journal, file::Status};
 use game::{Attribute, Control, Controls, Ship};
 use hotwatch::Hotwatch;
 use log::{debug, info};
@@ -54,14 +54,18 @@ pub fn run() {
 
     let tx2 = tx.clone();
     let tx3 = tx.clone();
+    let tx4 = tx.clone();
     let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
         .expect("File watcher failed to initialize");
 
     if let Some(journal_file_path) = game::file::latest_journal_file_path() {
-        game::file::journal::watch(journal_file_path, &mut hotwatch, &tx);
+        tx.send(Event::NewJournalFile(journal_file_path))
+            .expect("Can't send new journal file message for latest journal file");
     } else {
         debug!("No latest journal file found");
     }
+
+    journal::watch_dir(game::file::journal_dir_path(), &mut hotwatch, &tx);
 
     hotwatch
         .watch(status_file_path, move |event: hotwatch::Event| {
@@ -88,6 +92,7 @@ pub fn run() {
 
     for event in rx {
         match event {
+            Event::NewJournalFile(file_path) => journal::watch(file_path, &mut hotwatch, &tx4),
             Event::Exit => break,
             Event::AnimationTick => x52pro.update_animated_leds(),
             Event::StatusUpdate(status) => {

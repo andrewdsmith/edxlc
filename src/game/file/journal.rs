@@ -9,6 +9,33 @@ use std::{
     sync::mpsc::Sender,
 };
 
+/// Watch the given directory for new journal files then send a
+/// `NewJournalFile` event using the channel sender.
+pub fn watch_dir(dir_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::Event>) {
+    let tx = tx.clone();
+
+    watcher
+        .watch(dir_path, move |event: hotwatch::Event| {
+            debug!("Journal directory watch event: {:?}", event);
+
+            if let hotwatch::Event::Create(file_path) = event {
+                let file_name = file_path
+                    .file_name()
+                    .expect("Can't get file name for created file")
+                    .to_str()
+                    .expect("Can't convert file name to UTF-8");
+
+                debug!("New file in journal directory: {}", file_name);
+
+                if file_name.starts_with("Journal") && file_name.ends_with(".log") {
+                    tx.send(events::Event::NewJournalFile(file_path))
+                        .expect("Can't send new journal file message");
+                }
+            }
+        })
+        .expect("Can't watch journal directory");
+}
+
 /// Watch the journal file at the given path for changes using the watcher then
 /// send a `JournalEvent` using the channel sender.
 pub fn watch(file_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::Event>) {
@@ -29,6 +56,8 @@ pub fn watch(file_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::Eve
 
     watcher
         .watch(file_path, move |event: hotwatch::Event| {
+            debug!("Journal file event: {:?}", event);
+
             if let hotwatch::Event::Write(_) = event {
                 read_events(&mut reader, event_from_json, &tx);
             }
