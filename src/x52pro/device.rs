@@ -9,7 +9,7 @@ pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 /// controller device.
 pub struct Device {
     direct_output: DirectOutput,
-    led_status_levels: HashMap<LED, StatusLevel>,
+    animated_led_status_levels: HashMap<LED, StatusLevel>,
     status_level_mapper: StatusLevelMapper,
 }
 
@@ -24,7 +24,7 @@ impl Device {
 
         Device {
             direct_output,
-            led_status_levels: HashMap::new(),
+            animated_led_status_levels: HashMap::new(),
             status_level_mapper,
         }
     }
@@ -52,7 +52,12 @@ impl Device {
             self.set_led_status_level(&led, &status_level);
         }
 
-        self.led_status_levels = led_highest_status_levels;
+        led_highest_status_levels.retain(|_, &mut status_level| {
+            self.status_level_mapper
+                .status_level_is_animated(&status_level)
+        });
+
+        self.animated_led_status_levels = led_highest_status_levels;
     }
 
     /// Set the given LED to the specified status level.
@@ -86,9 +91,7 @@ impl Device {
     // Ideally the device would manage its own threading for animation but
     // this would require state updates to be communicated asynchronously.
     pub fn update_animated_leds(&self) {
-        for (led, status_level) in &self.led_status_levels {
-            // Could query the mapper to see if the LED is in an animated state
-            // and only update it if necessary here.
+        for (led, status_level) in &self.animated_led_status_levels {
             self.set_led_status_level(led, status_level);
         }
     }
@@ -178,12 +181,7 @@ impl StatusLevelMapper {
     // levels to LED states, meaning animated states need only be calculated
     // once.
     fn led_state(&self, status_level: &StatusLevel) -> LEDState {
-        let led_state = match status_level {
-            StatusLevel::Inactive => self.inactive,
-            StatusLevel::Active => self.active,
-            StatusLevel::Blocked => self.blocked,
-            StatusLevel::Alert => self.alert,
-        };
+        let led_state = self.unanimated_led_state(status_level);
 
         if led_state == LEDState::FlashingRedAmber {
             let millis = self.reference_time.elapsed().unwrap().as_millis();
@@ -194,6 +192,21 @@ impl StatusLevelMapper {
             }
         } else {
             led_state
+        }
+    }
+
+    /// Returns true if the given status level is configured to an animated
+    /// state.
+    fn status_level_is_animated(&self, status_level: &StatusLevel) -> bool {
+        self.unanimated_led_state(status_level) == LEDState::FlashingRedAmber
+    }
+
+    fn unanimated_led_state(&self, status_level: &StatusLevel) -> LEDState {
+        match status_level {
+            StatusLevel::Inactive => self.inactive,
+            StatusLevel::Active => self.active,
+            StatusLevel::Blocked => self.blocked,
+            StatusLevel::Alert => self.alert,
         }
     }
 }
