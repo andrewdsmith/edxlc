@@ -138,13 +138,13 @@ impl DirectOutput {
     /// setting the LED state fails, e.g. if given an invalid `id`.
     pub fn set_led(&self, id: u32, active: bool) {
         let value = if active { 1 } else { 0 };
+        debug!("Setting LED {} to {}", id, value);
 
         unsafe {
             let result = (self.set_led_fn)(self.device, PAGE_ID, id, value);
-            debug!("DirectOutput_SetLed result = {:?}", result);
 
             if result != 0 {
-                panic!("Could not set LED with DirectOutput");
+                panic!("Can't set LED, return value {}", result);
             }
         }
     }
