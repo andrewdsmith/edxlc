@@ -36,57 +36,60 @@ pub fn watch_dir(dir_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::
         .expect("Can't watch journal directory");
 }
 
-/// Watch the journal file at the given path for changes using the watcher then
-/// send a `JournalEvent` using the channel sender.
-pub fn watch(file_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::Event>) {
-    info!("Watching journal file at {}", file_path.to_str().unwrap());
-
-    // By creating the reader outside the scope of the watcher closure we keep
-    // it open between events, meaning each time the event fires we only read
-    // the newly added event lines.
-    let file = File::open(&file_path).expect("Can't open journal file");
-    let mut reader = BufReader::new(file);
-
-    let tx = tx.clone();
-
-    // Catch up with the event lines already in the file. There is a race here
-    // because the file could be written to between this call and the watcher
-    // starting but we'll catch up as soon as the file it written to again.
-    read_events(&mut reader, event_from_json, &tx);
-
-    watcher
-        .watch(file_path, move |event: hotwatch::Event| {
-            debug!("Journal file event: {:?}", event);
-
-            if let hotwatch::Event::Write(_) = event {
-                read_events(&mut reader, event_from_json, &tx);
-            }
-        })
-        .expect("Can't watch journal file");
+/// A stateful reader that can be called repeatedly, each time returning only
+/// the new journal events appended to journal file since the last call.
+pub struct JournalReader {
+    journal_buf_reader: Option<BufReader<File>>,
 }
 
-/// Read events from the journal file using the given reader and parse. Send supported journal
-/// events on the channel sender.
-fn read_events<T>(reader: &mut BufReader<T>, parser: fn(&str) -> Event, tx: &Sender<events::Event>)
+impl JournalReader {
+    /// Returns a new instance of the reader not associated with any journal
+    /// file.
+    pub fn new() -> Self {
+        JournalReader {
+            journal_buf_reader: None,
+        }
+    }
+
+    /// Opens the given file for reading.
+    pub fn open(&mut self, journal_file_path: PathBuf) {
+        debug!("Opening journal file: {:?}", journal_file_path);
+        let journal_file = File::open(&journal_file_path).expect("Can't open journal file");
+        self.journal_buf_reader = Some(BufReader::new(journal_file));
+    }
+
+    /// When called before `open` returns an empty vector. When called the first
+    /// time after `open` returns all the journal events currently in the
+    /// journal. On subsequent calls returns the new journal events appended to
+    /// journal file since the last call.
+    pub fn new_events(&mut self) -> Vec<Event> {
+        if let Some(reader) = &mut self.journal_buf_reader {
+            events_from_buf_reader(reader, event_from_json)
+        } else {
+            vec![]
+        }
+    }
+}
+
+/// Read lines from the given reader and map to journal events using the given
+/// parser, filtering out `Event::Other`.
+fn events_from_buf_reader<T>(reader: &mut BufReader<T>, parser: fn(&str) -> Event) -> Vec<Event>
 where
     T: std::io::Read,
 {
+    let mut events = Vec::new();
     let mut line = String::new();
+
     while reader
         .read_line(&mut line)
         .expect("Can't read journal file")
         != 0
     {
-        // Could collapse duplicate and redundant events here, i.e. when
-        // reading an existing journal file at start-up. Alternatively collect
-        // all events and then indicate which one is the last to delay device
-        // updates until the end.
         match parser(&line) {
             Event::Other => (),
             event => {
-                debug!("Sending journal event {:?}", event);
-                tx.send(events::Event::JournalEvent(event))
-                    .expect("Can't send journal event message");
+                info!("Journal event {:?}", event);
+                events.push(event);
             }
         }
 
@@ -94,6 +97,8 @@ where
         // parse one line at a time.
         line.clear();
     }
+
+    events
 }
 
 /// Returns a journal event parsed from the given JSON string.
@@ -101,6 +106,8 @@ fn event_from_json(json: &str) -> Event {
     serde_json::from_str(&json).expect("Can't parse journal event JSON")
 }
 
+// This enum should be renamed `JournalEvent` to reduce name collisions outside
+// this module (given it's public).
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(tag = "event")]
 pub enum Event {
@@ -115,13 +122,11 @@ pub enum Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::mpsc;
 
     #[test]
-    fn read_events_sends_events_except_other() {
+    fn events_from_buf_reader_maps_each_line_to_an_event() {
         let events = "LINE1\nLINE2\n".as_bytes();
         let mut reader = BufReader::new(events);
-        let (tx, rx) = mpsc::channel();
         fn fake_parser(json: &str) -> Event {
             match json {
                 "LINE1\n" => Event::DockingGranted,
@@ -130,15 +135,11 @@ mod tests {
             }
         }
 
-        read_events(&mut reader, fake_parser, &tx);
-
+        // Filters out `Event::Other`.
         assert_eq!(
-            rx.try_recv().unwrap(),
-            events::Event::JournalEvent(Event::DockingGranted)
+            events_from_buf_reader(&mut reader, fake_parser),
+            vec![Event::DockingGranted]
         );
-
-        // Does not send `Event::Other`.
-        assert_eq!(rx.try_recv().is_err(), true);
     }
 
     #[test]

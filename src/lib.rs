@@ -5,7 +5,7 @@ mod x52pro;
 
 use config::Config;
 use events::Event;
-use game::{file::journal, file::Status};
+use game::{file::journal, file::journal::JournalReader, file::Status};
 use game::{Attribute, Control, Controls, Ship};
 use hotwatch::Hotwatch;
 use log::{debug, info};
@@ -47,17 +47,9 @@ pub fn run() {
     let mut ship = Ship::new();
     let (tx, rx) = mpsc::channel();
 
-    let initial_status =
-        Status::from_file(&status_file_path).expect("Could not read current status");
-    tx.send(Event::StatusUpdate(initial_status))
-        .expect("Could not send status update message");
+    let mut journal_reader = JournalReader::new();
 
-    let tx2 = tx.clone();
-    let tx3 = tx.clone();
-    let tx4 = tx.clone();
-    let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
-        .expect("File watcher failed to initialize");
-
+    // Need to send this event before status so journal is read too.
     if let Some(journal_file_path) = game::file::latest_journal_file_path() {
         tx.send(Event::NewJournalFile(journal_file_path))
             .expect("Can't send new journal file message for latest journal file");
@@ -65,6 +57,18 @@ pub fn run() {
         debug!("No latest journal file found");
     }
 
+    let initial_status =
+        Status::from_file(&status_file_path).expect("Could not read current status");
+    tx.send(Event::StatusUpdate(initial_status))
+        .expect("Could not send status update message");
+
+    let tx2 = tx.clone();
+    let tx3 = tx.clone();
+    let mut hotwatch = Hotwatch::new_with_custom_delay(Duration::from_millis(100))
+        .expect("File watcher failed to initialize");
+
+    // Could pass a closure here to decouple the function from the event
+    // raising, although we'd be back to cloning `tx` locally.
     journal::watch_dir(game::file::journal_dir_path(), &mut hotwatch, &tx);
 
     hotwatch
@@ -92,20 +96,30 @@ pub fn run() {
 
     for event in rx {
         match event {
-            Event::NewJournalFile(file_path) => journal::watch(file_path, &mut hotwatch, &tx4),
+            Event::NewJournalFile(file_path) => journal_reader.open(file_path),
             Event::Exit => break,
             Event::AnimationTick => x52pro.update_animated_leds(),
             Event::StatusUpdate(status) => {
-                if ship.update_status(status) {
+                // Unlike the status file, it appears that the current journal
+                // file is kept open by the game, which in turn appears to
+                // prevent write events being raised immediately on the file,
+                // meaning we can't watch it for changes. Instead, we try
+                // reading each time the status file is re-written.
+                let journal_events = journal_reader.new_events();
+                let journal_events_present = !journal_events.is_empty();
+
+                for journal_event in journal_events {
+                    ship.apply_journal_event(journal_event);
+                }
+
+                // Could push the new journal events into `update_status` or
+                // even pass in the reader itself, although that's increasing
+                // the coupling.
+                if ship.update_status(status) | journal_events_present {
                     set_x52pro_inputs_from_ship_statues(&mut x52pro, &controls, ship.statuses());
                 } else {
                     debug!("Status file updated but change not relevant");
                 }
-            }
-            Event::JournalEvent(journal_event) => {
-                info!("Journal event {:?}", journal_event);
-                ship.apply_journal_event(journal_event);
-                set_x52pro_inputs_from_ship_statues(&mut x52pro, &controls, ship.statuses());
             }
         }
     }
