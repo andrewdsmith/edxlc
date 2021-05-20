@@ -2,6 +2,7 @@
 
 ## Version 1.6
 
+- Reads control bindings from Odyssey `Custom.4.0.binds` file
 - Reads configuration from `edxlc.toml` file in the current working directory
 - Writes default `edxlc.toml` configuration file if missing
 - Shows alert state for landing gear if not deployed while docking
