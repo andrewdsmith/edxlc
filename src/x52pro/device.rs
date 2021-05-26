@@ -75,6 +75,7 @@ impl Device {
 
         let state = self.status_level_mapper.led_state(status_level);
         let (red_led_state, green_led_state) = match state {
+            LEDState::Off => (false, false),
             LEDState::Red => (true, false),
             LEDState::Amber => (true, true),
             LEDState::Green => (false, true),
@@ -129,6 +130,7 @@ enum LED {
 /// Available states for LEDs on the device.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LEDState {
+    Off,
     Red,
     Amber,
     Green,

@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.7
+
+- Supports `off` state for button lights in configuration
+
 ## Version 1.6
 
 - Reads control bindings from Odyssey `Custom.4.0.binds` file

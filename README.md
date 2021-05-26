@@ -4,33 +4,43 @@ This small companion app to the game Elite Dangerous automatically controls the
 button LEDs on your Saitek X52 Pro joystick so that they reflect the current
 state of your ship or SRV in the game.
 
-Currently the app detects if you activate any of the following:
+The app monitors the state of the following:
 
 - Landing gear
 - Cargo scoop
 - External lights
-- Frame shift drive
+- Frame shift drive (FSD)
 - Silent running
 
-When activated, any button on your X52 Pro (except currently Fire and POV 2)
-configured to control the item in question will turn yellow when activated.
+Where a game control for these items is bound to a button on the joystick, the
+button colour will indicate the following states:
 
-Buttons that are cannot be used because of certain other conditions turn red.
-For example when mass-locked, all buttons relating to hyperdrive and supercruise
-turn red.
+- Inactive - Green - Not currently activated but can be activated
+- Active - Amber - Currently activated
+- Blocked - Red - Cannot be activated
+- Alert - Flashing Red/Amber - May need to be activated urgently
 
-Buttons that may require immediate activation alert by flashing red and yellow.
-For example when docking the landing gear button flashes and when overheating
-the heat sink button flashes.
+An example blocked state is FSD activation while mass-locked. Examples of alert
+states include heat sinks when overheating and undeployed landing gear after
+docking permission has been granted.
+
+The colours used by the app for each state can be configured by editing the
+`edxlc.toml` file. This file is created automatically when the app is first run
+if it does not exist. You must restart the app to pick up changes in this
+configuration. The supported colour values are:
+
+- `off`
+- `green`
+- `amber`
+- `red`
+- `red-amber`
 
 The app reads the control bindings from the custom bindings file (Odyssey only)
 so if you're using any other pre-defined set of bindings it won't work (yet).
 
-The colours used by the app can be configured by editing the `edxlc.toml` file.
-This file is created automatically when the app is first run if it does not
-exist. You must restart the app to pick up changes in configuration.
-
-Over time more buttons, controls and states will be supported.
+The app does not currently support controls mapped to the Fire button, the POV 2
+hat or the throttle. The aim is to support these, along with further controls
+and states, in the fullness of time.
 
 The app runs in a console window and can be exited with Ctrl+C.
 

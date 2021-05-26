@@ -5,6 +5,7 @@ use std::{fs, path::Path};
 
 const CONFIG_FILENAME: &str = "edxlc.toml";
 
+const CONFIG_OFF: &str = "off";
 const CONFIG_RED: &str = "red";
 const CONFIG_AMBER: &str = "amber";
 const CONFIG_GREEN: &str = "green";
@@ -50,6 +51,7 @@ impl Config {
 /// Panics is the string does not map to an `LEDState` value.
 fn led_state_from_config(value: &String) -> LEDState {
     match value.as_str() {
+        CONFIG_OFF => LEDState::Off,
         CONFIG_RED => LEDState::Red,
         CONFIG_AMBER => LEDState::Amber,
         CONFIG_GREEN => LEDState::Green,
@@ -111,6 +113,7 @@ mod tests {
 
     #[test]
     fn led_state_from_string_maps_strings_to_values() {
+        assert_led_state_from_config(CONFIG_OFF, LEDState::Off);
         assert_led_state_from_config(CONFIG_RED, LEDState::Red);
         assert_led_state_from_config(CONFIG_AMBER, LEDState::Amber);
         assert_led_state_from_config(CONFIG_GREEN, LEDState::Green);
