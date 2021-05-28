@@ -62,28 +62,21 @@ impl Device {
 
     /// Set the given LED to the specified status level.
     fn set_led_status_level(&self, led: &LED, status_level: &StatusLevel) {
-        let (red_led_id, green_led_id) = match led {
-            LED::Clutch => (17, 18),
-            LED::FireA => (1, 2),
-            LED::FireB => (3, 4),
-            LED::FireD => (5, 6),
-            LED::FireE => (7, 8),
-            LED::T1T2 => (9, 10),
-            LED::T3T4 => (11, 12),
-            LED::T5T6 => (13, 14),
+        // These values should be constants. Maybe move this to a constructor
+        // on the enum.
+        let led_mapping = match led {
+            LED::Clutch => LEDMapping::RedGreen(17, 18),
+            LED::FireA => LEDMapping::RedGreen(1, 2),
+            LED::FireB => LEDMapping::RedGreen(3, 4),
+            LED::FireD => LEDMapping::RedGreen(5, 6),
+            LED::FireE => LEDMapping::RedGreen(7, 8),
+            LED::T1T2 => LEDMapping::RedGreen(9, 10),
+            LED::T3T4 => LEDMapping::RedGreen(11, 12),
+            LED::T5T6 => LEDMapping::RedGreen(13, 14),
         };
 
         let state = self.status_level_mapper.led_state(status_level);
-        let (red_led_state, green_led_state) = match state {
-            LEDState::Off => (false, false),
-            LEDState::Red => (true, false),
-            LEDState::Amber => (true, true),
-            LEDState::Green => (false, true),
-            _ => panic!("Unable to set unmapped LED state"),
-        };
-
-        self.direct_output.set_led(red_led_id, red_led_state);
-        self.direct_output.set_led(green_led_id, green_led_state);
+        led_mapping.set_leds_to_state(&self.direct_output, state);
     }
 
     /// Updates LEDs that have a state that is animated, e.g. flashing. This
@@ -114,7 +107,7 @@ pub enum Input {
     T6,
 }
 
-/// Controllable LEDs on the devive.
+/// Controllable LEDs on the device.
 #[derive(Debug, Eq, Hash, PartialEq)]
 enum LED {
     Clutch,
@@ -135,6 +128,33 @@ pub enum LEDState {
     Amber,
     Green,
     FlashingRedAmber,
+}
+
+/// Logical sets of LEDS ids the combine to provide different colours. This
+/// will be extended with a `Single` type to support controls like the Fire
+/// button and the throttle.
+enum LEDMapping {
+    RedGreen(u32, u32),
+}
+
+impl LEDMapping {
+    /// Sets the mapped LEDS to the given state.
+    fn set_leds_to_state(self, direct_output: &DirectOutput, led_state: LEDState) {
+        match self {
+            Self::RedGreen(red_led_id, green_led_id) => {
+                let (red_led_state, green_led_state) = match led_state {
+                    LEDState::Off => (false, false),
+                    LEDState::Red => (true, false),
+                    LEDState::Amber => (true, true),
+                    LEDState::Green => (false, true),
+                    _ => panic!("Unable to set unmapped LED state"),
+                };
+
+                direct_output.set_led(red_led_id, red_led_state);
+                direct_output.set_led(green_led_id, green_led_state);
+            }
+        }
+    }
 }
 
 /// Returns the LED that corresponds to a given input. Note that in some cases,
