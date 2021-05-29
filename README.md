@@ -38,9 +38,11 @@ configuration. The supported colour values are:
 The app reads the control bindings from the custom bindings file (Odyssey only)
 so if you're using any other pre-defined set of bindings it won't work (yet).
 
-The app does not currently support controls mapped to the Fire button, the POV 2
-hat or the throttle. The aim is to support these, along with further controls
-and states, in the fullness of time.
+The app does not currently support controls mapped to the POV 2 hat or the
+throttle. The aim is to support these, along with further controls and states,
+in the fullness of time. Note that the Fire button only supports on and off,
+i.e. any value in the configuration other than `off` will result in the button
+light being on.
 
 The app runs in a console window and can be exited with Ctrl+C.
 

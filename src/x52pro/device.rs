@@ -7,6 +7,7 @@ pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 
 const LED_CLUTCH_RED: u32 = 17;
 const LED_CLUTCH_GREEN: u32 = 18;
+const LED_FIRE: u32 = 0;
 const LED_FIRE_A_RED: u32 = 1;
 const LED_FIRE_A_GREEN: u32 = 2;
 const LED_FIRE_B_RED: u32 = 3;
@@ -83,6 +84,7 @@ impl Device {
         // be reused.
         let led_mapping = match led {
             LED::Clutch => LEDMapping::RedGreen(LED_CLUTCH_RED, LED_CLUTCH_GREEN),
+            LED::Fire => LEDMapping::OnOff(LED_FIRE),
             LED::FireA => LEDMapping::RedGreen(LED_FIRE_A_RED, LED_FIRE_A_GREEN),
             LED::FireB => LEDMapping::RedGreen(LED_FIRE_B_RED, LED_FIRE_B_GREEN),
             LED::FireD => LEDMapping::RedGreen(LED_FIRE_D_RED, LED_FIRE_D_GREEN),
@@ -112,6 +114,7 @@ impl Device {
 #[derive(Debug, PartialEq)]
 pub enum Input {
     Clutch,
+    Fire,
     FireA,
     FireB,
     FireD,
@@ -128,6 +131,7 @@ pub enum Input {
 #[derive(Debug, Eq, Hash, PartialEq)]
 enum LED {
     Clutch,
+    Fire,
     FireA,
     FireB,
     FireD,
@@ -151,6 +155,7 @@ pub enum LEDState {
 /// will be extended with a `Single` type to support controls like the Fire
 /// button and the throttle.
 enum LEDMapping {
+    OnOff(u32),
     RedGreen(u32, u32),
 }
 
@@ -158,6 +163,15 @@ impl LEDMapping {
     /// Sets the mapped LEDS to the given state.
     fn set_leds_to_state(self, direct_output: &DirectOutput, led_state: LEDState) {
         match self {
+            Self::OnOff(led_id) => {
+                let led_state = match led_state {
+                    LEDState::Off => false,
+                    LEDState::Red | LEDState::Amber | LEDState::Green => true,
+                    _ => panic!("Unable to set unmapped LED state"),
+                };
+
+                direct_output.set_led(led_id, led_state);
+            }
             Self::RedGreen(red_led_id, green_led_id) => {
                 let (red_led_state, green_led_state) = match led_state {
                     LEDState::Off => (false, false),
@@ -179,6 +193,7 @@ impl LEDMapping {
 fn led_for_input(input: Input) -> LED {
     match input {
         Input::Clutch => LED::Clutch,
+        Input::Fire => LED::Fire,
         Input::FireA => LED::FireA,
         Input::FireB => LED::FireB,
         Input::FireD => LED::FireD,
@@ -257,6 +272,7 @@ mod tests {
     #[test]
     fn input_to_led_permutations() {
         assert_led_for_input(Input::Clutch, LED::Clutch);
+        assert_led_for_input(Input::Fire, LED::Fire);
         assert_led_for_input(Input::FireA, LED::FireA);
         assert_led_for_input(Input::FireB, LED::FireB);
         assert_led_for_input(Input::FireD, LED::FireD);

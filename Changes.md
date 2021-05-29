@@ -3,6 +3,7 @@
 ## Version 1.7
 
 - Supports `off` state for button lights in configuration
+- Supports the Fire button
 
 ## Version 1.6
 

@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 const X52PRO_DEVICE: &str = "SaitekX52Pro";
 const X52PRO_CLUTCH: &str = "Joy_31";
+const X52PRO_FIRE: &str = "Joy_2";
 const X52PRO_FIRE_A: &str = "Joy_3";
 const X52PRO_FIRE_B: &str = "Joy_4";
 const X52PRO_FIRE_D: &str = "Joy_7";
@@ -79,6 +80,7 @@ fn input_from_file_input(input: &BindingsInput) -> Option<Input> {
     match input.device.as_str() {
         X52PRO_DEVICE => match input.name.as_str() {
             X52PRO_CLUTCH => Some(Input::Clutch),
+            X52PRO_FIRE => Some(Input::Fire),
             X52PRO_FIRE_A => Some(Input::FireA),
             X52PRO_FIRE_B => Some(Input::FireB),
             X52PRO_FIRE_D => Some(Input::FireD),
