@@ -5,6 +5,23 @@ use std::time::SystemTime;
 
 pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 
+const LED_CLUTCH_RED: u32 = 17;
+const LED_CLUTCH_GREEN: u32 = 18;
+const LED_FIRE_A_RED: u32 = 1;
+const LED_FIRE_A_GREEN: u32 = 2;
+const LED_FIRE_B_RED: u32 = 3;
+const LED_FIRE_B_GREEN: u32 = 4;
+const LED_FIRE_D_RED: u32 = 5;
+const LED_FIRE_D_GREEN: u32 = 6;
+const LED_FIRE_E_RED: u32 = 7;
+const LED_FIRE_E_GREEN: u32 = 8;
+const LED_T1T2_RED: u32 = 9;
+const LED_T1T2_GREEN: u32 = 10;
+const LED_T3T4_RED: u32 = 11;
+const LED_T3T4_GREEN: u32 = 12;
+const LED_T5T6_RED: u32 = 13;
+const LED_T5T6_GREEN: u32 = 14;
+
 /// An instance of an interface to a Saitek X52 Pro Flight HOTAS flight
 /// controller device.
 pub struct Device {
@@ -62,17 +79,17 @@ impl Device {
 
     /// Set the given LED to the specified status level.
     fn set_led_status_level(&self, led: &LED, status_level: &StatusLevel) {
-        // These values should be constants. Maybe move this to a constructor
-        // on the enum.
+        // Should cache these mappings in hash in the constructor so they can
+        // be reused.
         let led_mapping = match led {
-            LED::Clutch => LEDMapping::RedGreen(17, 18),
-            LED::FireA => LEDMapping::RedGreen(1, 2),
-            LED::FireB => LEDMapping::RedGreen(3, 4),
-            LED::FireD => LEDMapping::RedGreen(5, 6),
-            LED::FireE => LEDMapping::RedGreen(7, 8),
-            LED::T1T2 => LEDMapping::RedGreen(9, 10),
-            LED::T3T4 => LEDMapping::RedGreen(11, 12),
-            LED::T5T6 => LEDMapping::RedGreen(13, 14),
+            LED::Clutch => LEDMapping::RedGreen(LED_CLUTCH_RED, LED_CLUTCH_GREEN),
+            LED::FireA => LEDMapping::RedGreen(LED_FIRE_A_RED, LED_FIRE_A_GREEN),
+            LED::FireB => LEDMapping::RedGreen(LED_FIRE_B_RED, LED_FIRE_B_GREEN),
+            LED::FireD => LEDMapping::RedGreen(LED_FIRE_D_RED, LED_FIRE_D_GREEN),
+            LED::FireE => LEDMapping::RedGreen(LED_FIRE_E_RED, LED_FIRE_E_GREEN),
+            LED::T1T2 => LEDMapping::RedGreen(LED_T1T2_RED, LED_T1T2_GREEN),
+            LED::T3T4 => LEDMapping::RedGreen(LED_T3T4_RED, LED_T3T4_GREEN),
+            LED::T5T6 => LEDMapping::RedGreen(LED_T5T6_RED, LED_T5T6_GREEN),
         };
 
         let state = self.status_level_mapper.led_state(status_level);
