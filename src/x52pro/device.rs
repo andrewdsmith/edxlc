@@ -151,6 +151,15 @@ pub enum LEDState {
     FlashingRedAmber,
 }
 
+/// Available final, unanimated states for LEDs on the device.
+#[derive(Debug, PartialEq)]
+pub enum LEDStaticState {
+    Off,
+    Red,
+    Amber,
+    Green,
+}
+
 /// Logical sets of LEDS ids the combine to provide different colours. This
 /// will be extended with a `Single` type to support controls like the Fire
 /// button and the throttle.
@@ -161,24 +170,22 @@ enum LEDMapping {
 
 impl LEDMapping {
     /// Sets the mapped LEDS to the given state.
-    fn set_leds_to_state(self, direct_output: &DirectOutput, led_state: LEDState) {
+    fn set_leds_to_state(self, direct_output: &DirectOutput, led_state: LEDStaticState) {
         match self {
             Self::OnOff(led_id) => {
                 let led_state = match led_state {
-                    LEDState::Off => false,
-                    LEDState::Red | LEDState::Amber | LEDState::Green => true,
-                    _ => panic!("Unable to set unmapped LED state"),
+                    LEDStaticState::Off => false,
+                    LEDStaticState::Red | LEDStaticState::Amber | LEDStaticState::Green => true,
                 };
 
                 direct_output.set_led(led_id, led_state);
             }
             Self::RedGreen(red_led_id, green_led_id) => {
                 let (red_led_state, green_led_state) = match led_state {
-                    LEDState::Off => (false, false),
-                    LEDState::Red => (true, false),
-                    LEDState::Amber => (true, true),
-                    LEDState::Green => (false, true),
-                    _ => panic!("Unable to set unmapped LED state"),
+                    LEDStaticState::Off => (false, false),
+                    LEDStaticState::Red => (true, false),
+                    LEDStaticState::Amber => (true, true),
+                    LEDStaticState::Green => (false, true),
                 };
 
                 direct_output.set_led(red_led_id, red_led_state);
@@ -234,18 +241,22 @@ impl StatusLevelMapper {
     // Could take a closure here instead that passes in a hash mapping state
     // levels to LED states, meaning animated states need only be calculated
     // once.
-    fn led_state(&self, status_level: &StatusLevel) -> LEDState {
+    fn led_state(&self, status_level: &StatusLevel) -> LEDStaticState {
         let led_state = self.unanimated_led_state(status_level);
 
-        if led_state == LEDState::FlashingRedAmber {
-            let millis = self.reference_time.elapsed().unwrap().as_millis();
-            if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
-                LEDState::Red
-            } else {
-                LEDState::Amber
+        match led_state {
+            LEDState::Off => LEDStaticState::Off,
+            LEDState::Red => LEDStaticState::Red,
+            LEDState::Amber => LEDStaticState::Amber,
+            LEDState::Green => LEDStaticState::Green,
+            LEDState::FlashingRedAmber => {
+                let millis = self.reference_time.elapsed().unwrap().as_millis();
+                if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
+                    LEDStaticState::Red
+                } else {
+                    LEDStaticState::Amber
+                }
             }
-        } else {
-            led_state
         }
     }
 
@@ -291,13 +302,13 @@ mod tests {
 
     #[test]
     fn status_level_for_led_state_permutations() {
-        assert_led_state_for_status_level(StatusLevel::Inactive, LEDState::Green);
-        assert_led_state_for_status_level(StatusLevel::Active, LEDState::Amber);
-        assert_led_state_for_status_level(StatusLevel::Blocked, LEDState::Red);
-        assert_led_state_for_status_level(StatusLevel::Alert, LEDState::Red);
+        assert_led_state_for_status_level(StatusLevel::Inactive, LEDStaticState::Green);
+        assert_led_state_for_status_level(StatusLevel::Active, LEDStaticState::Amber);
+        assert_led_state_for_status_level(StatusLevel::Blocked, LEDStaticState::Red);
+        assert_led_state_for_status_level(StatusLevel::Alert, LEDStaticState::Red);
     }
 
-    fn assert_led_state_for_status_level(status_level: StatusLevel, led_state: LEDState) {
+    fn assert_led_state_for_status_level(status_level: StatusLevel, led_state: LEDStaticState) {
         let status_level_mapper = StatusLevelMapper::new(
             LEDState::Green,
             LEDState::Amber,
