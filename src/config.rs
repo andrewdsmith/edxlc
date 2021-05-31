@@ -1,4 +1,4 @@
-use crate::x52pro::device::{LEDState, StatusLevelMapper};
+use crate::x52pro::device::{RedAmberGreenLightMode, StatusLevelMapper};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -47,15 +47,15 @@ impl Config {
     }
 }
 
-/// Returns the `LEDState` value corresponding to the referenced string value.
-/// Panics is the string does not map to an `LEDState` value.
-fn led_state_from_config(value: &String) -> LEDState {
+/// Returns the `RedAmberGreenLightMode` value corresponding to the referenced string value.
+/// Panics is the string does not map to an `RedAmberGreenLightMode` value.
+fn led_state_from_config(value: &String) -> RedAmberGreenLightMode {
     match value.as_str() {
-        CONFIG_OFF => LEDState::Off,
-        CONFIG_RED => LEDState::Red,
-        CONFIG_AMBER => LEDState::Amber,
-        CONFIG_GREEN => LEDState::Green,
-        CONFIG_RED_AMBER => LEDState::FlashingRedAmber,
+        CONFIG_OFF => RedAmberGreenLightMode::Off,
+        CONFIG_RED => RedAmberGreenLightMode::Red,
+        CONFIG_AMBER => RedAmberGreenLightMode::Amber,
+        CONFIG_GREEN => RedAmberGreenLightMode::Green,
+        CONFIG_RED_AMBER => RedAmberGreenLightMode::FlashingRedAmber,
         _ => panic!("Unsupported configuration value '{}'", value),
     }
 }
@@ -107,17 +107,17 @@ mod tests {
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
     }
 
-    fn assert_led_state_from_config(input: &str, expected: LEDState) {
+    fn assert_led_state_from_config(input: &str, expected: RedAmberGreenLightMode) {
         assert_eq!(led_state_from_config(&String::from(input)), expected);
     }
 
     #[test]
     fn led_state_from_string_maps_strings_to_values() {
-        assert_led_state_from_config(CONFIG_OFF, LEDState::Off);
-        assert_led_state_from_config(CONFIG_RED, LEDState::Red);
-        assert_led_state_from_config(CONFIG_AMBER, LEDState::Amber);
-        assert_led_state_from_config(CONFIG_GREEN, LEDState::Green);
-        assert_led_state_from_config(CONFIG_RED_AMBER, LEDState::FlashingRedAmber);
+        assert_led_state_from_config(CONFIG_OFF, RedAmberGreenLightMode::Off);
+        assert_led_state_from_config(CONFIG_RED, RedAmberGreenLightMode::Red);
+        assert_led_state_from_config(CONFIG_AMBER, RedAmberGreenLightMode::Amber);
+        assert_led_state_from_config(CONFIG_GREEN, RedAmberGreenLightMode::Green);
+        assert_led_state_from_config(CONFIG_RED_AMBER, RedAmberGreenLightMode::FlashingRedAmber);
     }
 
     #[test]

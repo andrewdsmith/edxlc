@@ -143,7 +143,7 @@ enum LED {
 
 /// Available states for LEDs on the device.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum LEDState {
+pub enum RedAmberGreenLightMode {
     Off,
     Red,
     Amber,
@@ -239,19 +239,24 @@ fn led_for_input(input: Input) -> LED {
     }
 }
 
-/// An mapper that returns an `LEDState` for a given `StateLevel`. The mapping
+/// An mapper that returns an `RedAmberGreenLightMode` for a given `StateLevel`. The mapping
 /// depends on time to support animated (flashing) states.
 pub struct StatusLevelMapper {
-    inactive: LEDState,
-    active: LEDState,
-    blocked: LEDState,
-    alert: LEDState,
+    inactive: RedAmberGreenLightMode,
+    active: RedAmberGreenLightMode,
+    blocked: RedAmberGreenLightMode,
+    alert: RedAmberGreenLightMode,
     reference_time: SystemTime,
 }
 
 impl StatusLevelMapper {
     /// Returns a new instance the mapper.
-    pub fn new(inactive: LEDState, active: LEDState, blocked: LEDState, alert: LEDState) -> Self {
+    pub fn new(
+        inactive: RedAmberGreenLightMode,
+        active: RedAmberGreenLightMode,
+        blocked: RedAmberGreenLightMode,
+        alert: RedAmberGreenLightMode,
+    ) -> Self {
         Self {
             inactive,
             active,
@@ -270,15 +275,19 @@ impl StatusLevelMapper {
         let led_state = self.unanimated_led_state(status_level);
 
         match led_state {
-            LEDState::Off => LightState::new(RedAmberGreenLightState::Off, BooleanLightState::Off),
-            LEDState::Red => LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On),
-            LEDState::Amber => {
+            RedAmberGreenLightMode::Off => {
+                LightState::new(RedAmberGreenLightState::Off, BooleanLightState::Off)
+            }
+            RedAmberGreenLightMode::Red => {
+                LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On)
+            }
+            RedAmberGreenLightMode::Amber => {
                 LightState::new(RedAmberGreenLightState::Amber, BooleanLightState::On)
             }
-            LEDState::Green => {
+            RedAmberGreenLightMode::Green => {
                 LightState::new(RedAmberGreenLightState::Green, BooleanLightState::On)
             }
-            LEDState::FlashingRedAmber => {
+            RedAmberGreenLightMode::FlashingRedAmber => {
                 let millis = self.reference_time.elapsed().unwrap().as_millis();
                 if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
                     LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On)
@@ -292,10 +301,10 @@ impl StatusLevelMapper {
     /// Returns true if the given status level is configured to an animated
     /// state.
     fn status_level_is_animated(&self, status_level: &StatusLevel) -> bool {
-        self.unanimated_led_state(status_level) == LEDState::FlashingRedAmber
+        self.unanimated_led_state(status_level) == RedAmberGreenLightMode::FlashingRedAmber
     }
 
-    fn unanimated_led_state(&self, status_level: &StatusLevel) -> LEDState {
+    fn unanimated_led_state(&self, status_level: &StatusLevel) -> RedAmberGreenLightMode {
         match status_level {
             StatusLevel::Inactive => self.inactive,
             StatusLevel::Active => self.active,
@@ -342,10 +351,10 @@ mod tests {
         led_state: RedAmberGreenLightState,
     ) {
         let status_level_mapper = StatusLevelMapper::new(
-            LEDState::Green,
-            LEDState::Amber,
-            LEDState::Red,
-            LEDState::FlashingRedAmber,
+            RedAmberGreenLightMode::Green,
+            RedAmberGreenLightMode::Amber,
+            RedAmberGreenLightMode::Red,
+            RedAmberGreenLightMode::FlashingRedAmber,
         );
         let light_state = LightState::new(led_state, BooleanLightState::On);
         assert_eq!(status_level_mapper.led_state(&status_level), light_state);
