@@ -27,7 +27,7 @@ const LED_T5T6_GREEN: u32 = 14;
 /// controller device.
 pub struct Device {
     direct_output: DirectOutput,
-    animated_led_status_levels: HashMap<LED, StatusLevel>,
+    animated_led_status_levels: HashMap<Light, StatusLevel>,
     status_level_mapper: StatusLevelMapper,
 }
 
@@ -48,8 +48,8 @@ impl Device {
     }
 
     /// Sets each input to specified status level. Repeated inputs with
-    /// different status levels are handled by using the highest value. The LED
-    /// for the input is looked up, as is the LED state for the status level.
+    /// different status levels are handled by using the highest value. The Light
+    /// for the input is looked up, as is the Light state for the status level.
     pub fn set_input_status_levels(&mut self, input_status_levels: Vec<(Input, StatusLevel)>) {
         // Build a hash of the highest status level keyed by led.
         let mut led_highest_status_levels = HashMap::new();
@@ -78,20 +78,20 @@ impl Device {
         self.animated_led_status_levels = led_highest_status_levels;
     }
 
-    /// Set the given LED to the specified status level.
-    fn set_led_status_level(&self, led: &LED, status_level: &StatusLevel) {
+    /// Set the given Light to the specified status level.
+    fn set_led_status_level(&self, led: &Light, status_level: &StatusLevel) {
         // Should cache these mappings in hash in the constructor so they can
         // be reused.
         let led_mapping = match led {
-            LED::Clutch => LEDMapping::RedGreen(LED_CLUTCH_RED, LED_CLUTCH_GREEN),
-            LED::Fire => LEDMapping::OnOff(LED_FIRE),
-            LED::FireA => LEDMapping::RedGreen(LED_FIRE_A_RED, LED_FIRE_A_GREEN),
-            LED::FireB => LEDMapping::RedGreen(LED_FIRE_B_RED, LED_FIRE_B_GREEN),
-            LED::FireD => LEDMapping::RedGreen(LED_FIRE_D_RED, LED_FIRE_D_GREEN),
-            LED::FireE => LEDMapping::RedGreen(LED_FIRE_E_RED, LED_FIRE_E_GREEN),
-            LED::T1T2 => LEDMapping::RedGreen(LED_T1T2_RED, LED_T1T2_GREEN),
-            LED::T3T4 => LEDMapping::RedGreen(LED_T3T4_RED, LED_T3T4_GREEN),
-            LED::T5T6 => LEDMapping::RedGreen(LED_T5T6_RED, LED_T5T6_GREEN),
+            Light::Clutch => LEDMapping::RedGreen(LED_CLUTCH_RED, LED_CLUTCH_GREEN),
+            Light::Fire => LEDMapping::OnOff(LED_FIRE),
+            Light::FireA => LEDMapping::RedGreen(LED_FIRE_A_RED, LED_FIRE_A_GREEN),
+            Light::FireB => LEDMapping::RedGreen(LED_FIRE_B_RED, LED_FIRE_B_GREEN),
+            Light::FireD => LEDMapping::RedGreen(LED_FIRE_D_RED, LED_FIRE_D_GREEN),
+            Light::FireE => LEDMapping::RedGreen(LED_FIRE_E_RED, LED_FIRE_E_GREEN),
+            Light::T1T2 => LEDMapping::RedGreen(LED_T1T2_RED, LED_T1T2_GREEN),
+            Light::T3T4 => LEDMapping::RedGreen(LED_T3T4_RED, LED_T3T4_GREEN),
+            Light::T5T6 => LEDMapping::RedGreen(LED_T5T6_RED, LED_T5T6_GREEN),
         };
 
         let state = self.status_level_mapper.led_state(status_level);
@@ -129,7 +129,7 @@ pub enum Input {
 
 /// Controllable LEDs on the device.
 #[derive(Debug, Eq, Hash, PartialEq)]
-enum LED {
+enum Light {
     Clutch,
     Fire,
     FireA,
@@ -220,22 +220,22 @@ impl LEDMapping {
     }
 }
 
-/// Returns the LED that corresponds to a given input. Note that in some cases,
-/// specifically the T buttons, multiple inputs share an LED.
-fn led_for_input(input: Input) -> LED {
+/// Returns the Light that corresponds to a given input. Note that in some cases,
+/// specifically the T buttons, multiple inputs share an Light.
+fn led_for_input(input: Input) -> Light {
     match input {
-        Input::Clutch => LED::Clutch,
-        Input::Fire => LED::Fire,
-        Input::FireA => LED::FireA,
-        Input::FireB => LED::FireB,
-        Input::FireD => LED::FireD,
-        Input::FireE => LED::FireE,
-        Input::T1 => LED::T1T2,
-        Input::T2 => LED::T1T2,
-        Input::T3 => LED::T3T4,
-        Input::T4 => LED::T3T4,
-        Input::T5 => LED::T5T6,
-        Input::T6 => LED::T5T6,
+        Input::Clutch => Light::Clutch,
+        Input::Fire => Light::Fire,
+        Input::FireA => Light::FireA,
+        Input::FireB => Light::FireB,
+        Input::FireD => Light::FireD,
+        Input::FireE => Light::FireE,
+        Input::T1 => Light::T1T2,
+        Input::T2 => Light::T1T2,
+        Input::T3 => Light::T3T4,
+        Input::T4 => Light::T3T4,
+        Input::T5 => Light::T5T6,
+        Input::T6 => Light::T5T6,
     }
 }
 
@@ -266,10 +266,10 @@ impl StatusLevelMapper {
         }
     }
 
-    /// Returns the LED state that corrsponds to a given status level.
+    /// Returns the Light state that corrsponds to a given status level.
     //
     // Could take a closure here instead that passes in a hash mapping state
-    // levels to LED states, meaning animated states need only be calculated
+    // levels to Light states, meaning animated states need only be calculated
     // once.
     fn led_state(&self, status_level: &StatusLevel) -> LightState {
         let led_state = self.unanimated_led_state(status_level);
@@ -320,21 +320,21 @@ mod tests {
 
     #[test]
     fn input_to_led_permutations() {
-        assert_led_for_input(Input::Clutch, LED::Clutch);
-        assert_led_for_input(Input::Fire, LED::Fire);
-        assert_led_for_input(Input::FireA, LED::FireA);
-        assert_led_for_input(Input::FireB, LED::FireB);
-        assert_led_for_input(Input::FireD, LED::FireD);
-        assert_led_for_input(Input::FireE, LED::FireE);
-        assert_led_for_input(Input::T1, LED::T1T2);
-        assert_led_for_input(Input::T2, LED::T1T2);
-        assert_led_for_input(Input::T3, LED::T3T4);
-        assert_led_for_input(Input::T4, LED::T3T4);
-        assert_led_for_input(Input::T5, LED::T5T6);
-        assert_led_for_input(Input::T6, LED::T5T6);
+        assert_led_for_input(Input::Clutch, Light::Clutch);
+        assert_led_for_input(Input::Fire, Light::Fire);
+        assert_led_for_input(Input::FireA, Light::FireA);
+        assert_led_for_input(Input::FireB, Light::FireB);
+        assert_led_for_input(Input::FireD, Light::FireD);
+        assert_led_for_input(Input::FireE, Light::FireE);
+        assert_led_for_input(Input::T1, Light::T1T2);
+        assert_led_for_input(Input::T2, Light::T1T2);
+        assert_led_for_input(Input::T3, Light::T3T4);
+        assert_led_for_input(Input::T4, Light::T3T4);
+        assert_led_for_input(Input::T5, Light::T5T6);
+        assert_led_for_input(Input::T6, Light::T5T6);
     }
 
-    fn assert_led_for_input(input: Input, led: LED) {
+    fn assert_led_for_input(input: Input, led: Light) {
         assert_eq!(led_for_input(input), led);
     }
 

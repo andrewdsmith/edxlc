@@ -1,7 +1,7 @@
-# Elite Dangerous X52 Pro LED Control - EDXLC
+# Elite Dangerous X52 Pro Light Control - EDXLC
 
 This small companion app to the game Elite Dangerous automatically controls the
-button LEDs on your Saitek X52 Pro joystick so that they reflect the current
+button lights on your Saitek X52 Pro joystick so that they reflect the current
 state of your ship or SRV in the game.
 
 The app monitors the state of the following:
