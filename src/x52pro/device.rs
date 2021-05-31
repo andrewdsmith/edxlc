@@ -160,6 +160,31 @@ pub enum LEDStaticState {
     Green,
 }
 
+/// Available states for a light on the device that can be either off or on.
+#[derive(Debug, PartialEq)]
+enum BooleanLightState {
+    Off,
+    On,
+}
+
+/// The state for a light of unknown type, holding the states for both boolean
+/// and red/amber/green lights.
+#[derive(Debug, PartialEq)]
+struct LightState {
+    pub boolean: BooleanLightState,
+    pub red_amber_green: LEDStaticState,
+}
+
+impl LightState {
+    /// Returns a new `LightState` instance.
+    fn new(red_amber_green: LEDStaticState, boolean: BooleanLightState) -> Self {
+        Self {
+            red_amber_green,
+            boolean,
+        }
+    }
+}
+
 /// Logical sets of LEDS ids the combine to provide different colours. This
 /// will be extended with a `Single` type to support controls like the Fire
 /// button and the throttle.
@@ -170,18 +195,18 @@ enum LEDMapping {
 
 impl LEDMapping {
     /// Sets the mapped LEDS to the given state.
-    fn set_leds_to_state(self, direct_output: &DirectOutput, led_state: LEDStaticState) {
+    fn set_leds_to_state(self, direct_output: &DirectOutput, light_state: LightState) {
         match self {
             Self::OnOff(led_id) => {
-                let led_state = match led_state {
-                    LEDStaticState::Off => false,
-                    LEDStaticState::Red | LEDStaticState::Amber | LEDStaticState::Green => true,
+                let led_active = match light_state.boolean {
+                    BooleanLightState::Off => false,
+                    BooleanLightState::On => true,
                 };
 
-                direct_output.set_led(led_id, led_state);
+                direct_output.set_led(led_id, led_active);
             }
             Self::RedGreen(red_led_id, green_led_id) => {
-                let (red_led_state, green_led_state) = match led_state {
+                let (red_led_state, green_led_state) = match light_state.red_amber_green {
                     LEDStaticState::Off => (false, false),
                     LEDStaticState::Red => (true, false),
                     LEDStaticState::Amber => (true, true),
@@ -241,20 +266,20 @@ impl StatusLevelMapper {
     // Could take a closure here instead that passes in a hash mapping state
     // levels to LED states, meaning animated states need only be calculated
     // once.
-    fn led_state(&self, status_level: &StatusLevel) -> LEDStaticState {
+    fn led_state(&self, status_level: &StatusLevel) -> LightState {
         let led_state = self.unanimated_led_state(status_level);
 
         match led_state {
-            LEDState::Off => LEDStaticState::Off,
-            LEDState::Red => LEDStaticState::Red,
-            LEDState::Amber => LEDStaticState::Amber,
-            LEDState::Green => LEDStaticState::Green,
+            LEDState::Off => LightState::new(LEDStaticState::Off, BooleanLightState::Off),
+            LEDState::Red => LightState::new(LEDStaticState::Red, BooleanLightState::On),
+            LEDState::Amber => LightState::new(LEDStaticState::Amber, BooleanLightState::On),
+            LEDState::Green => LightState::new(LEDStaticState::Green, BooleanLightState::On),
             LEDState::FlashingRedAmber => {
                 let millis = self.reference_time.elapsed().unwrap().as_millis();
                 if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
-                    LEDStaticState::Red
+                    LightState::new(LEDStaticState::Red, BooleanLightState::On)
                 } else {
-                    LEDStaticState::Amber
+                    LightState::new(LEDStaticState::Amber, BooleanLightState::Off)
                 }
             }
         }
@@ -315,6 +340,7 @@ mod tests {
             LEDState::Red,
             LEDState::FlashingRedAmber,
         );
-        assert_eq!(status_level_mapper.led_state(&status_level), led_state);
+        let light_state = LightState::new(led_state, BooleanLightState::On);
+        assert_eq!(status_level_mapper.led_state(&status_level), light_state);
     }
 }
