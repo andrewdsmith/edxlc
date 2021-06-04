@@ -98,7 +98,7 @@ pub fn run() {
         match event {
             Event::NewJournalFile(file_path) => journal_reader.open(file_path),
             Event::Exit => break,
-            Event::AnimationTick => x52pro.update_animated_leds(),
+            Event::AnimationTick => x52pro.update_animated_lights(),
             Event::StatusUpdate(status) => {
                 // Unlike the status file, it appears that the current journal
                 // file is kept open by the game, which in turn appears to
