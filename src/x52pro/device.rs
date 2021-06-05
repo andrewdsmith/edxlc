@@ -27,7 +27,7 @@ const LED_T5T6_GREEN: u32 = 14;
 /// controller device.
 pub struct Device {
     direct_output: DirectOutput,
-    animated_light_status_levels: HashMap<Light, StatusLevel>,
+    animated_lights: HashMap<Light, RedAmberGreenLightMode>,
     status_level_mapper: StatusLevelMapper,
 }
 
@@ -42,7 +42,7 @@ impl Device {
 
         Device {
             direct_output,
-            animated_light_status_levels: HashMap::new(),
+            animated_lights: HashMap::new(),
             status_level_mapper,
         }
     }
@@ -66,20 +66,22 @@ impl Device {
             }
         }
 
+        self.animated_lights.clear();
+
         for (light, status_level) in &light_highest_status_levels {
-            self.set_light_status_level(&light, &status_level);
+            let light_mode = self
+                .status_level_mapper
+                .light_mode_for_status_level(status_level);
+
+            self.update_light_in_mode(&light, &light_mode);
+
+            if self.status_level_mapper.mode_is_animated(light_mode) {
+                self.animated_lights.insert(*light, light_mode);
+            }
         }
-
-        light_highest_status_levels.retain(|_, &mut status_level| {
-            self.status_level_mapper
-                .status_level_is_animated(&status_level)
-        });
-
-        self.animated_light_status_levels = light_highest_status_levels;
     }
 
-    /// Set the given Light to the specified status level.
-    fn set_light_status_level(&self, light: &Light, status_level: &StatusLevel) {
+    fn update_light_in_mode(&self, light: &Light, light_mode: &RedAmberGreenLightMode) {
         // Should cache these mappings in hash in the constructor so they can
         // be reused.
         let led_mapping = match light {
@@ -94,7 +96,7 @@ impl Device {
             Light::T5T6 => LEDMapping::RedGreen(LED_T5T6_RED, LED_T5T6_GREEN),
         };
 
-        let light_state = self.status_level_mapper.light_state(status_level);
+        let light_state = self.status_level_mapper.light_state_for_mode(light_mode);
         led_mapping.set_leds_to_state(&self.direct_output, light_state);
     }
 
@@ -104,8 +106,8 @@ impl Device {
     // Ideally the device would manage its own threading for animation but
     // this would require state updates to be communicated asynchronously.
     pub fn update_animated_lights(&self) {
-        for (light, status_level) in &self.animated_light_status_levels {
-            self.set_light_status_level(light, status_level);
+        for (light, light_mode) in &self.animated_lights {
+            self.update_light_in_mode(light, light_mode);
         }
     }
 }
@@ -128,7 +130,7 @@ pub enum Input {
 }
 
 /// Controllable lights on the device.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 enum Light {
     Clutch,
     Fire,
@@ -266,14 +268,12 @@ impl StatusLevelMapper {
         }
     }
 
-    /// Returns the Light state that corrsponds to a given status level.
+    /// Returns the LightState that corrsponds to the given mode.
     //
-    // Could take a closure here instead that passes in a hash mapping state
-    // levels to Light states, meaning animated states need only be calculated
+    // Could take a closure here instead that passes in a pre-computed hash
+    // mapping modes to states, so that animated states need only be calculated
     // once.
-    fn light_state(&self, status_level: &StatusLevel) -> LightState {
-        let light_mode = self.light_mode_for_status_level(status_level);
-
+    fn light_state_for_mode(&self, light_mode: &RedAmberGreenLightMode) -> LightState {
         match light_mode {
             RedAmberGreenLightMode::Off => {
                 LightState::new(RedAmberGreenLightState::Off, BooleanLightState::Off)
@@ -298,10 +298,9 @@ impl StatusLevelMapper {
         }
     }
 
-    /// Returns true if the given status level is configured to an animated
-    /// state.
-    fn status_level_is_animated(&self, status_level: &StatusLevel) -> bool {
-        self.light_mode_for_status_level(status_level) == RedAmberGreenLightMode::FlashingRedAmber
+    // This could become a function on the enum.
+    fn mode_is_animated(&self, light_mode: RedAmberGreenLightMode) -> bool {
+        light_mode == RedAmberGreenLightMode::FlashingRedAmber
     }
 
     fn light_mode_for_status_level(&self, status_level: &StatusLevel) -> RedAmberGreenLightMode {
@@ -336,27 +335,5 @@ mod tests {
 
     fn assert_light_for_input(input: Input, light: Light) {
         assert_eq!(light_for_input(input), light);
-    }
-
-    #[test]
-    fn status_level_for_light_state_permutations() {
-        assert_light_state_for_status_level(StatusLevel::Inactive, RedAmberGreenLightState::Green);
-        assert_light_state_for_status_level(StatusLevel::Active, RedAmberGreenLightState::Amber);
-        assert_light_state_for_status_level(StatusLevel::Blocked, RedAmberGreenLightState::Red);
-        assert_light_state_for_status_level(StatusLevel::Alert, RedAmberGreenLightState::Red);
-    }
-
-    fn assert_light_state_for_status_level(
-        status_level: StatusLevel,
-        rag_light_state: RedAmberGreenLightState,
-    ) {
-        let status_level_mapper = StatusLevelMapper::new(
-            RedAmberGreenLightMode::Green,
-            RedAmberGreenLightMode::Amber,
-            RedAmberGreenLightMode::Red,
-            RedAmberGreenLightMode::FlashingRedAmber,
-        );
-        let light_state = LightState::new(rag_light_state, BooleanLightState::On);
-        assert_eq!(status_level_mapper.light_state(&status_level), light_state);
     }
 }
