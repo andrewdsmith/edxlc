@@ -15,7 +15,7 @@ use std::time::Duration;
 use x52pro::Device;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::device::ALERT_FLASH_MILLISECONDS as u64;
+const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::ALERT_FLASH_MILLISECONDS as u64;
 
 #[cfg(debug_assertions)]
 const DEFAULT_LOG_LEVEL: &str = "edxlc=debug";

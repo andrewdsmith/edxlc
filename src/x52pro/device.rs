@@ -1,9 +1,6 @@
 use crate::game::StatusLevel;
-use crate::x52pro::direct_output::DirectOutput;
+use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper};
 use std::collections::HashMap;
-use std::time::SystemTime;
-
-pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
 
 const LED_CLUTCH_RED: u32 = 17;
 const LED_CLUTCH_GREEN: u32 = 18;
@@ -29,6 +26,7 @@ pub struct Device {
     direct_output: DirectOutput,
     animated_lights: HashMap<Light, RedAmberGreenLightMode>,
     status_level_mapper: StatusLevelMapper,
+    light_mode_to_state_mapper: LightModeToStateMapper,
 }
 
 impl Device {
@@ -44,6 +42,7 @@ impl Device {
             direct_output,
             animated_lights: HashMap::new(),
             status_level_mapper,
+            light_mode_to_state_mapper: LightModeToStateMapper::new(),
         }
     }
 
@@ -96,7 +95,7 @@ impl Device {
             Light::T5T6 => LEDMapping::RedGreen(LED_T5T6_RED, LED_T5T6_GREEN),
         };
 
-        let light_state = self.status_level_mapper.light_state_for_mode(light_mode);
+        let light_state = self.light_mode_to_state_mapper.map(light_mode);
         led_mapping.set_leds_to_state(&self.direct_output, light_state);
     }
 
@@ -164,7 +163,7 @@ pub enum RedAmberGreenLightState {
 
 /// Available states for a light on the device that can be either off or on.
 #[derive(Debug, PartialEq)]
-enum BooleanLightState {
+pub enum BooleanLightState {
     Off,
     On,
 }
@@ -172,14 +171,14 @@ enum BooleanLightState {
 /// The state for a light of unknown type, holding the states for both boolean
 /// and red/amber/green lights.
 #[derive(Debug, PartialEq)]
-struct LightState {
+pub struct LightState {
     pub boolean: BooleanLightState,
     pub red_amber_green: RedAmberGreenLightState,
 }
 
 impl LightState {
     /// Returns a new `LightState` instance.
-    fn new(red_amber_green: RedAmberGreenLightState, boolean: BooleanLightState) -> Self {
+    pub fn new(red_amber_green: RedAmberGreenLightState, boolean: BooleanLightState) -> Self {
         Self {
             red_amber_green,
             boolean,
@@ -241,14 +240,12 @@ fn light_for_input(input: Input) -> Light {
     }
 }
 
-/// An mapper that returns an `RedAmberGreenLightMode` for a given `StateLevel`. The mapping
-/// depends on time to support animated (flashing) states.
+/// Maps status levels to light modes based on the given configuration.
 pub struct StatusLevelMapper {
     inactive: RedAmberGreenLightMode,
     active: RedAmberGreenLightMode,
     blocked: RedAmberGreenLightMode,
     alert: RedAmberGreenLightMode,
-    reference_time: SystemTime,
 }
 
 impl StatusLevelMapper {
@@ -264,37 +261,6 @@ impl StatusLevelMapper {
             active,
             blocked,
             alert,
-            reference_time: SystemTime::now(),
-        }
-    }
-
-    /// Returns the LightState that corrsponds to the given mode.
-    //
-    // Could take a closure here instead that passes in a pre-computed hash
-    // mapping modes to states, so that animated states need only be calculated
-    // once.
-    fn light_state_for_mode(&self, light_mode: &RedAmberGreenLightMode) -> LightState {
-        match light_mode {
-            RedAmberGreenLightMode::Off => {
-                LightState::new(RedAmberGreenLightState::Off, BooleanLightState::Off)
-            }
-            RedAmberGreenLightMode::Red => {
-                LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On)
-            }
-            RedAmberGreenLightMode::Amber => {
-                LightState::new(RedAmberGreenLightState::Amber, BooleanLightState::On)
-            }
-            RedAmberGreenLightMode::Green => {
-                LightState::new(RedAmberGreenLightState::Green, BooleanLightState::On)
-            }
-            RedAmberGreenLightMode::FlashingRedAmber => {
-                let millis = self.reference_time.elapsed().unwrap().as_millis();
-                if (millis / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
-                    LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On)
-                } else {
-                    LightState::new(RedAmberGreenLightState::Amber, BooleanLightState::Off)
-                }
-            }
         }
     }
 
