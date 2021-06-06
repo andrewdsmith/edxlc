@@ -74,7 +74,7 @@ impl Device {
 
             self.update_light_in_mode(&light, &light_mode);
 
-            if self.status_level_mapper.mode_is_animated(light_mode) {
+            if light_mode.is_animated() {
                 self.animated_lights.insert(*light, light_mode);
             }
         }
@@ -150,6 +150,16 @@ pub enum RedAmberGreenLightMode {
     Amber,
     Green,
     FlashingRedAmber,
+}
+
+impl RedAmberGreenLightMode {
+    /// Returns true if the mode requires animation, i.e. changes over time.
+    fn is_animated(&self) -> bool {
+        match self {
+            RedAmberGreenLightMode::FlashingRedAmber => true,
+            _ => false,
+        }
+    }
 }
 
 /// Available final, unanimated states for lights on the device.
@@ -262,11 +272,6 @@ impl StatusLevelMapper {
             blocked,
             alert,
         }
-    }
-
-    // This could become a function on the enum.
-    fn mode_is_animated(&self, light_mode: RedAmberGreenLightMode) -> bool {
-        light_mode == RedAmberGreenLightMode::FlashingRedAmber
     }
 
     fn light_mode_for_status_level(&self, status_level: &StatusLevel) -> RedAmberGreenLightMode {
