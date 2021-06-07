@@ -33,7 +33,7 @@ pub fn run() {
     let config = Config::from_file();
     debug!("{:?}", config);
 
-    let mut x52pro = Device::new(config.status_level_mapper());
+    let mut x52pro = Device::new(config.status_level_to_mode_mapper());
 
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);

@@ -1,5 +1,5 @@
 use crate::game::StatusLevel;
-use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper};
+use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper, StatusLevelToModeMapper};
 use std::collections::HashMap;
 
 const LED_CLUTCH_RED: u32 = 17;
@@ -25,14 +25,14 @@ const LED_T5T6_GREEN: u32 = 14;
 pub struct Device {
     direct_output: DirectOutput,
     animated_lights: HashMap<Light, RedAmberGreenLightMode>,
-    status_level_mapper: StatusLevelMapper,
+    status_level_to_mode_mapper: StatusLevelToModeMapper,
     light_mode_to_state_mapper: LightModeToStateMapper,
 }
 
 impl Device {
     /// Returns a new instance of the device interface. Panics if the
     /// underlying `DirectOutput` instance cannot be loaded.
-    pub fn new(status_level_mapper: StatusLevelMapper) -> Self {
+    pub fn new(status_level_to_mode_mapper: StatusLevelToModeMapper) -> Self {
         let mut direct_output = DirectOutput::load();
         direct_output.initialize();
         direct_output.enumerate();
@@ -41,7 +41,7 @@ impl Device {
         Device {
             direct_output,
             animated_lights: HashMap::new(),
-            status_level_mapper,
+            status_level_to_mode_mapper,
             light_mode_to_state_mapper: LightModeToStateMapper::new(),
         }
     }
@@ -68,9 +68,7 @@ impl Device {
         self.animated_lights.clear();
 
         for (light, status_level) in &light_highest_status_levels {
-            let light_mode = self
-                .status_level_mapper
-                .light_mode_for_status_level(status_level);
+            let light_mode = self.status_level_to_mode_mapper.map(status_level);
 
             self.update_light_in_mode(&light, &light_mode);
 
@@ -247,40 +245,6 @@ fn light_for_input(input: Input) -> Light {
         Input::T4 => Light::T3T4,
         Input::T5 => Light::T5T6,
         Input::T6 => Light::T5T6,
-    }
-}
-
-/// Maps status levels to light modes based on the given configuration.
-pub struct StatusLevelMapper {
-    inactive: RedAmberGreenLightMode,
-    active: RedAmberGreenLightMode,
-    blocked: RedAmberGreenLightMode,
-    alert: RedAmberGreenLightMode,
-}
-
-impl StatusLevelMapper {
-    /// Returns a new instance the mapper.
-    pub fn new(
-        inactive: RedAmberGreenLightMode,
-        active: RedAmberGreenLightMode,
-        blocked: RedAmberGreenLightMode,
-        alert: RedAmberGreenLightMode,
-    ) -> Self {
-        Self {
-            inactive,
-            active,
-            blocked,
-            alert,
-        }
-    }
-
-    fn light_mode_for_status_level(&self, status_level: &StatusLevel) -> RedAmberGreenLightMode {
-        match status_level {
-            StatusLevel::Inactive => self.inactive,
-            StatusLevel::Active => self.active,
-            StatusLevel::Blocked => self.blocked,
-            StatusLevel::Alert => self.alert,
-        }
     }
 }
 

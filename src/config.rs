@@ -1,4 +1,4 @@
-use crate::x52pro::device::{RedAmberGreenLightMode, StatusLevelMapper};
+use crate::x52pro::{device::RedAmberGreenLightMode, StatusLevelToModeMapper};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -35,10 +35,10 @@ impl Config {
         toml::from_str(&toml).expect("Could not serialize default configuration")
     }
 
-    /// Returns a `StatusLevelMapper` configured from the mapped raw string
-    /// values held by the instance.
-    pub fn status_level_mapper(&self) -> StatusLevelMapper {
-        StatusLevelMapper::new(
+    /// Returns a `StatusLevelToModeMapper` configured from the mapped raw
+    /// string values held by the instance.
+    pub fn status_level_to_mode_mapper(&self) -> StatusLevelToModeMapper {
+        StatusLevelToModeMapper::new(
             led_state_from_config(&self.inactive),
             led_state_from_config(&self.active),
             led_state_from_config(&self.blocked),
