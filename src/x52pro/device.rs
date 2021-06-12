@@ -24,7 +24,8 @@ const LED_T5T6_GREEN: u32 = 14;
 /// controller device.
 pub struct Device {
     direct_output: DirectOutput,
-    animated_lights: HashMap<Light, RedAmberGreenLightMode>,
+    lights: HashMap<Light, Box<dyn LightMapping>>,
+    animated_lights: Vec<Light>,
     status_level_to_mode_mapper: StatusLevelToModeMapper,
     light_mode_to_state_mapper: LightModeToStateMapper,
 }
@@ -38,9 +39,46 @@ impl Device {
         direct_output.enumerate();
         direct_output.add_page();
 
+        let mut lights = HashMap::<Light, Box<dyn LightMapping>>::new();
+
+        lights.insert(
+            Light::Clutch,
+            Box::new(RedGreenLightMapping::new(LED_CLUTCH_RED, LED_CLUTCH_GREEN)),
+        );
+        lights.insert(Light::Fire, Box::new(BinaryLightMapping::new(LED_FIRE)));
+        lights.insert(
+            Light::FireA,
+            Box::new(RedGreenLightMapping::new(LED_FIRE_A_RED, LED_FIRE_A_GREEN)),
+        );
+        lights.insert(
+            Light::FireB,
+            Box::new(RedGreenLightMapping::new(LED_FIRE_B_RED, LED_FIRE_B_GREEN)),
+        );
+        lights.insert(
+            Light::FireD,
+            Box::new(RedGreenLightMapping::new(LED_FIRE_D_RED, LED_FIRE_D_GREEN)),
+        );
+        lights.insert(
+            Light::FireE,
+            Box::new(RedGreenLightMapping::new(LED_FIRE_E_RED, LED_FIRE_E_GREEN)),
+        );
+        lights.insert(
+            Light::T1T2,
+            Box::new(RedGreenLightMapping::new(LED_T1T2_RED, LED_T1T2_GREEN)),
+        );
+        lights.insert(
+            Light::T3T4,
+            Box::new(RedGreenLightMapping::new(LED_T3T4_RED, LED_T3T4_GREEN)),
+        );
+        lights.insert(
+            Light::T5T6,
+            Box::new(RedGreenLightMapping::new(LED_T5T6_RED, LED_T5T6_GREEN)),
+        );
+
         Device {
             direct_output,
-            animated_lights: HashMap::new(),
+            lights,
+            animated_lights: vec![],
             status_level_to_mode_mapper,
             light_mode_to_state_mapper: LightModeToStateMapper::new(),
         }
@@ -69,32 +107,15 @@ impl Device {
 
         for (light, status_level) in &light_highest_status_levels {
             let light_mode = self.status_level_to_mode_mapper.map(status_level);
+            let light_mapping = self.lights.get_mut(light).expect("Can't find light");
 
-            self.update_light_in_mode(&light, &light_mode);
+            light_mapping.set_mode(light_mode);
+            light_mapping.update_state(&self.direct_output, &self.light_mode_to_state_mapper);
 
-            if light_mode.is_animated() {
-                self.animated_lights.insert(*light, light_mode);
+            if light_mapping.is_animated() {
+                self.animated_lights.push(*light);
             }
         }
-    }
-
-    fn update_light_in_mode(&self, light: &Light, light_mode: &RedAmberGreenLightMode) {
-        // Should cache these mappings in hash in the constructor so they can
-        // be reused.
-        let led_mapping = match light {
-            Light::Clutch => LEDMapping::RedGreen(LED_CLUTCH_RED, LED_CLUTCH_GREEN),
-            Light::Fire => LEDMapping::OnOff(LED_FIRE),
-            Light::FireA => LEDMapping::RedGreen(LED_FIRE_A_RED, LED_FIRE_A_GREEN),
-            Light::FireB => LEDMapping::RedGreen(LED_FIRE_B_RED, LED_FIRE_B_GREEN),
-            Light::FireD => LEDMapping::RedGreen(LED_FIRE_D_RED, LED_FIRE_D_GREEN),
-            Light::FireE => LEDMapping::RedGreen(LED_FIRE_E_RED, LED_FIRE_E_GREEN),
-            Light::T1T2 => LEDMapping::RedGreen(LED_T1T2_RED, LED_T1T2_GREEN),
-            Light::T3T4 => LEDMapping::RedGreen(LED_T3T4_RED, LED_T3T4_GREEN),
-            Light::T5T6 => LEDMapping::RedGreen(LED_T5T6_RED, LED_T5T6_GREEN),
-        };
-
-        let light_state = self.light_mode_to_state_mapper.map(light_mode);
-        led_mapping.set_leds_to_state(&self.direct_output, light_state);
     }
 
     /// Updates lights that have a state that is animated, e.g. flashing. This
@@ -103,8 +124,9 @@ impl Device {
     // Ideally the device would manage its own threading for animation but
     // this would require state updates to be communicated asynchronously.
     pub fn update_animated_lights(&self) {
-        for (light, light_mode) in &self.animated_lights {
-            self.update_light_in_mode(light, light_mode);
+        for light in &self.animated_lights {
+            let light_mapping = self.lights.get(light).expect("Can't find light");
+            light_mapping.update_state(&self.direct_output, &self.light_mode_to_state_mapper);
         }
     }
 }
@@ -194,38 +216,103 @@ impl LightState {
     }
 }
 
-/// Logical sets of LEDS ids the combine to provide different colours. This
-/// will be extended with a `Single` type to support controls like the Fire
-/// button and the throttle.
-enum LEDMapping {
-    OnOff(u32),
-    RedGreen(u32, u32),
+/// Common methods for interacting with light mapped to one or more device LEDs.
+trait LightMapping {
+    /// Returns true if the light's currently set mode is animated.
+    fn is_animated(&self) -> bool;
+
+    /// Updates the light's mode.
+    fn set_mode(&mut self, light_mode: RedAmberGreenLightMode);
+
+    /// Updates the mapped LEDs using the given `DirectOutput` object and based
+    /// on the current mode and the given `LightModeToStateMapper`.
+    fn update_state(
+        &self,
+        direct_output: &DirectOutput,
+        light_mode_to_state_mapper: &LightModeToStateMapper,
+    );
 }
 
-impl LEDMapping {
-    /// Sets the mapped LEDS to the given state.
-    fn set_leds_to_state(self, direct_output: &DirectOutput, light_state: LightState) {
-        match self {
-            Self::OnOff(led_id) => {
-                let led_active = match light_state.boolean {
-                    BooleanLightState::Off => false,
-                    BooleanLightState::On => true,
-                };
+/// The mapping of a light to a single device LED.
+struct BinaryLightMapping {
+    led_id: u32,
+    light_mode: RedAmberGreenLightMode,
+}
 
-                direct_output.set_led(led_id, led_active);
-            }
-            Self::RedGreen(red_led_id, green_led_id) => {
-                let (red_led_state, green_led_state) = match light_state.red_amber_green {
-                    RedAmberGreenLightState::Off => (false, false),
-                    RedAmberGreenLightState::Red => (true, false),
-                    RedAmberGreenLightState::Amber => (true, true),
-                    RedAmberGreenLightState::Green => (false, true),
-                };
-
-                direct_output.set_led(red_led_id, red_led_state);
-                direct_output.set_led(green_led_id, green_led_state);
-            }
+impl BinaryLightMapping {
+    fn new(led_id: u32) -> Self {
+        Self {
+            led_id,
+            light_mode: RedAmberGreenLightMode::Off,
         }
+    }
+}
+
+impl LightMapping for BinaryLightMapping {
+    fn is_animated(&self) -> bool {
+        self.light_mode.is_animated()
+    }
+
+    fn set_mode(&mut self, light_mode: RedAmberGreenLightMode) {
+        self.light_mode = light_mode;
+    }
+
+    fn update_state(
+        &self,
+        direct_output: &DirectOutput,
+        light_mode_to_state_mapper: &LightModeToStateMapper,
+    ) {
+        let light_state = light_mode_to_state_mapper.map(&self.light_mode);
+        let led_active = match light_state.boolean {
+            BooleanLightState::Off => false,
+            BooleanLightState::On => true,
+        };
+
+        direct_output.set_led(self.led_id, led_active);
+    }
+}
+
+/// The mapping of a light to a red-green pair of device LEDs.
+struct RedGreenLightMapping {
+    red_led_id: u32,
+    green_led_id: u32,
+    light_mode: RedAmberGreenLightMode,
+}
+
+impl RedGreenLightMapping {
+    fn new(red_led_id: u32, green_led_id: u32) -> Self {
+        Self {
+            red_led_id,
+            green_led_id,
+            light_mode: RedAmberGreenLightMode::Off,
+        }
+    }
+}
+
+impl LightMapping for RedGreenLightMapping {
+    fn is_animated(&self) -> bool {
+        self.light_mode.is_animated()
+    }
+
+    fn set_mode(&mut self, light_mode: RedAmberGreenLightMode) {
+        self.light_mode = light_mode;
+    }
+
+    fn update_state(
+        &self,
+        direct_output: &DirectOutput,
+        light_mode_to_state_mapper: &LightModeToStateMapper,
+    ) {
+        let light_state = light_mode_to_state_mapper.map(&self.light_mode);
+        let (red_led_state, green_led_state) = match light_state.red_amber_green {
+            RedAmberGreenLightState::Off => (false, false),
+            RedAmberGreenLightState::Red => (true, false),
+            RedAmberGreenLightState::Amber => (true, true),
+            RedAmberGreenLightState::Green => (false, true),
+        };
+
+        direct_output.set_led(self.red_led_id, red_led_state);
+        direct_output.set_led(self.green_led_id, green_led_state);
     }
 }
 
