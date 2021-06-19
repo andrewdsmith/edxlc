@@ -1,8 +1,24 @@
-use crate::x52pro::device::{BooleanLightState, RedAmberGreenLightMode, RedAmberGreenLightState};
+use crate::x52pro::device::RedAmberGreenLightMode;
 use crate::x52pro::direct_output::DirectOutput;
 use std::time::SystemTime;
 
 pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
+
+/// Available final, unanimated states for lights on the device.
+#[derive(Debug, PartialEq)]
+enum RedAmberGreenLightState {
+    Off,
+    Red,
+    Amber,
+    Green,
+}
+
+/// Available states for a light on the device that can be either off or on.
+#[derive(Debug, PartialEq)]
+enum BooleanLightState {
+    Off,
+    On,
+}
 
 /// Maps light modes to light states. The returned states change over time
 /// because certain modes are animated, i.e. flashing.

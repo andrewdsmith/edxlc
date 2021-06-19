@@ -182,22 +182,6 @@ impl RedAmberGreenLightMode {
     }
 }
 
-/// Available final, unanimated states for lights on the device.
-#[derive(Debug, PartialEq)]
-pub enum RedAmberGreenLightState {
-    Off,
-    Red,
-    Amber,
-    Green,
-}
-
-/// Available states for a light on the device that can be either off or on.
-#[derive(Debug, PartialEq)]
-pub enum BooleanLightState {
-    Off,
-    On,
-}
-
 /// Common methods for interacting with light mapped to one or more device LEDs.
 trait LightMapping {
     /// Returns true if the light's currently set mode is animated.
