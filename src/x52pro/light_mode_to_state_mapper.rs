@@ -1,6 +1,7 @@
 use crate::x52pro::device::{
     BooleanLightState, LightState, RedAmberGreenLightMode, RedAmberGreenLightState,
 };
+use crate::x52pro::direct_output::DirectOutput;
 use std::time::SystemTime;
 
 pub const ALERT_FLASH_MILLISECONDS: u128 = 500;
@@ -28,6 +29,42 @@ impl LightModeToStateMapper {
     pub fn map(&self, light_mode: &RedAmberGreenLightMode) -> LightState {
         let milliseconds = self.reference_time.elapsed().unwrap().as_millis();
         light_state_for_mode(light_mode, milliseconds)
+    }
+
+    /// Sets the given device LED to the correct state based on the given mode.
+    pub fn update_binary_light(
+        &self,
+        direct_output: &DirectOutput,
+        light_mode: &RedAmberGreenLightMode,
+        led_id: u32,
+    ) {
+        let light_state = self.map(&light_mode);
+        let led_active = match light_state.boolean {
+            BooleanLightState::Off => false,
+            BooleanLightState::On => true,
+        };
+
+        direct_output.set_led(led_id, led_active);
+    }
+
+    /// Sets the given device LEDs to the correct state based on the given mode.
+    pub fn update_red_amber_green_light(
+        &self,
+        direct_output: &DirectOutput,
+        light_mode: &RedAmberGreenLightMode,
+        red_led_id: u32,
+        green_led_id: u32,
+    ) {
+        let light_state = self.map(light_mode);
+        let (red_led_state, green_led_state) = match light_state.red_amber_green {
+            RedAmberGreenLightState::Off => (false, false),
+            RedAmberGreenLightState::Red => (true, false),
+            RedAmberGreenLightState::Amber => (true, true),
+            RedAmberGreenLightState::Green => (false, true),
+        };
+
+        direct_output.set_led(red_led_id, red_led_state);
+        direct_output.set_led(green_led_id, green_led_state);
     }
 }
 

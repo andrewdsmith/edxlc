@@ -262,13 +262,11 @@ impl LightMapping for BinaryLightMapping {
         direct_output: &DirectOutput,
         light_mode_to_state_mapper: &LightModeToStateMapper,
     ) {
-        let light_state = light_mode_to_state_mapper.map(&self.light_mode);
-        let led_active = match light_state.boolean {
-            BooleanLightState::Off => false,
-            BooleanLightState::On => true,
-        };
-
-        direct_output.set_led(self.led_id, led_active);
+        light_mode_to_state_mapper.update_binary_light(
+            direct_output,
+            &self.light_mode,
+            self.led_id,
+        );
     }
 }
 
@@ -303,16 +301,12 @@ impl LightMapping for RedGreenLightMapping {
         direct_output: &DirectOutput,
         light_mode_to_state_mapper: &LightModeToStateMapper,
     ) {
-        let light_state = light_mode_to_state_mapper.map(&self.light_mode);
-        let (red_led_state, green_led_state) = match light_state.red_amber_green {
-            RedAmberGreenLightState::Off => (false, false),
-            RedAmberGreenLightState::Red => (true, false),
-            RedAmberGreenLightState::Amber => (true, true),
-            RedAmberGreenLightState::Green => (false, true),
-        };
-
-        direct_output.set_led(self.red_led_id, red_led_state);
-        direct_output.set_led(self.green_led_id, green_led_state);
+        light_mode_to_state_mapper.update_red_amber_green_light(
+            direct_output,
+            &self.light_mode,
+            self.red_led_id,
+            self.green_led_id,
+        );
     }
 }
 
