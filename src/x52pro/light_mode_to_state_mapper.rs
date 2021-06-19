@@ -1,6 +1,4 @@
-use crate::x52pro::device::{
-    BooleanLightState, LightState, RedAmberGreenLightMode, RedAmberGreenLightState,
-};
+use crate::x52pro::device::{BooleanLightState, RedAmberGreenLightMode, RedAmberGreenLightState};
 use crate::x52pro::direct_output::DirectOutput;
 use std::time::SystemTime;
 
@@ -20,17 +18,6 @@ impl LightModeToStateMapper {
         }
     }
 
-    /// Returns the light state corrsponding to the given light mode at the
-    /// current moment in time.
-    //
-    // Could take a closure here instead that provides a pre-computed hash with
-    // states keyed by modes so that animated states need only be calculated
-    // once.
-    pub fn map(&self, light_mode: &RedAmberGreenLightMode) -> LightState {
-        let milliseconds = self.reference_time.elapsed().unwrap().as_millis();
-        light_state_for_mode(light_mode, milliseconds)
-    }
-
     /// Sets the given device LED to the correct state based on the given mode.
     pub fn update_binary_light(
         &self,
@@ -38,8 +25,10 @@ impl LightModeToStateMapper {
         light_mode: &RedAmberGreenLightMode,
         led_id: u32,
     ) {
-        let light_state = self.map(&light_mode);
-        let led_active = match light_state.boolean {
+        let light_state = boolean_state_for_mode(light_mode, self.milliseconds_elapsed());
+
+        // Could move this mapping onto the enum.
+        let led_active = match light_state {
             BooleanLightState::Off => false,
             BooleanLightState::On => true,
         };
@@ -55,8 +44,10 @@ impl LightModeToStateMapper {
         red_led_id: u32,
         green_led_id: u32,
     ) {
-        let light_state = self.map(light_mode);
-        let (red_led_state, green_led_state) = match light_state.red_amber_green {
+        let light_state = red_amber_green_state_for_mode(light_mode, self.milliseconds_elapsed());
+
+        // Could move this mapping onto the enum.
+        let (red_led_state, green_led_state) = match light_state {
             RedAmberGreenLightState::Off => (false, false),
             RedAmberGreenLightState::Red => (true, false),
             RedAmberGreenLightState::Amber => (true, true),
@@ -66,31 +57,56 @@ impl LightModeToStateMapper {
         direct_output.set_led(red_led_id, red_led_state);
         direct_output.set_led(green_led_id, green_led_state);
     }
+
+    /// Returns the number of milliseconds elapsed since the reference time.
+    fn milliseconds_elapsed(&self) -> u128 {
+        self.reference_time.elapsed().unwrap().as_millis()
+    }
 }
 
-/// Returns the light state that corrsponds to the given light mode at the
-/// given time offset (in milliseconds).
-fn light_state_for_mode(light_mode: &RedAmberGreenLightMode, milliseconds: u128) -> LightState {
+/// Returns the boolean light state that corrsponds to the given light mode at
+/// the given time offset (in milliseconds).
+fn boolean_state_for_mode(
+    light_mode: &RedAmberGreenLightMode,
+    milliseconds: u128,
+) -> BooleanLightState {
     match light_mode {
-        RedAmberGreenLightMode::Off => {
-            LightState::new(RedAmberGreenLightState::Off, BooleanLightState::Off)
-        }
-        RedAmberGreenLightMode::Red => {
-            LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On)
-        }
-        RedAmberGreenLightMode::Amber => {
-            LightState::new(RedAmberGreenLightState::Amber, BooleanLightState::On)
-        }
-        RedAmberGreenLightMode::Green => {
-            LightState::new(RedAmberGreenLightState::Green, BooleanLightState::On)
-        }
+        RedAmberGreenLightMode::Off => BooleanLightState::Off,
+        RedAmberGreenLightMode::Red => BooleanLightState::On,
+        RedAmberGreenLightMode::Amber => BooleanLightState::On,
+        RedAmberGreenLightMode::Green => BooleanLightState::On,
         RedAmberGreenLightMode::FlashingRedAmber => {
-            if (milliseconds / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
-                LightState::new(RedAmberGreenLightState::Red, BooleanLightState::On)
-            } else {
-                LightState::new(RedAmberGreenLightState::Amber, BooleanLightState::Off)
-            }
+            animated_state(milliseconds, BooleanLightState::On, BooleanLightState::Off)
         }
+    }
+}
+
+/// Returns the red/amber/green light state that corrsponds to the given light
+/// mode at the given time offset (in milliseconds).
+fn red_amber_green_state_for_mode(
+    light_mode: &RedAmberGreenLightMode,
+    milliseconds: u128,
+) -> RedAmberGreenLightState {
+    match light_mode {
+        RedAmberGreenLightMode::Off => RedAmberGreenLightState::Off,
+        RedAmberGreenLightMode::Red => RedAmberGreenLightState::Red,
+        RedAmberGreenLightMode::Amber => RedAmberGreenLightState::Amber,
+        RedAmberGreenLightMode::Green => RedAmberGreenLightState::Green,
+        RedAmberGreenLightMode::FlashingRedAmber => animated_state(
+            milliseconds,
+            RedAmberGreenLightState::Red,
+            RedAmberGreenLightState::Amber,
+        ),
+    }
+}
+
+/// Returns either the first or second state based on the elapsed milliseconds
+/// given as compared to the defined interval for animation.
+fn animated_state<T>(milliseconds: u128, first_state: T, second_state: T) -> T {
+    if (milliseconds / ALERT_FLASH_MILLISECONDS) & 1 == 0 {
+        first_state
+    } else {
+        second_state
     }
 }
 
@@ -98,77 +114,49 @@ fn light_state_for_mode(light_mode: &RedAmberGreenLightMode, milliseconds: u128)
 mod tests {
     use super::*;
 
-    fn assert_light_state_for_mode(
-        light_mode: RedAmberGreenLightMode,
-        milliseconds: u128,
-        red_amber_green: RedAmberGreenLightState,
-        boolean: BooleanLightState,
+    fn assert_boolean_mapping(
+        mode: RedAmberGreenLightMode,
+        state_now: BooleanLightState,
+        state_later: BooleanLightState,
     ) {
-        let light_state = LightState::new(red_amber_green, boolean);
-        assert_eq!(light_state_for_mode(&light_mode, milliseconds), light_state);
+        assert_eq!(boolean_state_for_mode(&mode, 0), state_now);
+        assert_eq!(
+            boolean_state_for_mode(&mode, ALERT_FLASH_MILLISECONDS),
+            state_later
+        );
     }
 
     #[test]
-    fn light_state_for_mode_permutations() {
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Off,
-            0,
-            RedAmberGreenLightState::Off,
-            BooleanLightState::Off,
+    fn boolean_light_states_for_modes() {
+        use BooleanLightState::*;
+
+        assert_boolean_mapping(RedAmberGreenLightMode::Off, Off, Off);
+        assert_boolean_mapping(RedAmberGreenLightMode::Red, On, On);
+        assert_boolean_mapping(RedAmberGreenLightMode::Amber, On, On);
+        assert_boolean_mapping(RedAmberGreenLightMode::Green, On, On);
+        assert_boolean_mapping(RedAmberGreenLightMode::FlashingRedAmber, On, Off);
+    }
+
+    fn assert_rag_mapping(
+        mode: RedAmberGreenLightMode,
+        state_now: RedAmberGreenLightState,
+        state_later: RedAmberGreenLightState,
+    ) {
+        assert_eq!(red_amber_green_state_for_mode(&mode, 0), state_now);
+        assert_eq!(
+            red_amber_green_state_for_mode(&mode, ALERT_FLASH_MILLISECONDS),
+            state_later
         );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Off,
-            ALERT_FLASH_MILLISECONDS,
-            RedAmberGreenLightState::Off,
-            BooleanLightState::Off,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Red,
-            0,
-            RedAmberGreenLightState::Red,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Red,
-            ALERT_FLASH_MILLISECONDS,
-            RedAmberGreenLightState::Red,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Amber,
-            0,
-            RedAmberGreenLightState::Amber,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Amber,
-            ALERT_FLASH_MILLISECONDS,
-            RedAmberGreenLightState::Amber,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Green,
-            0,
-            RedAmberGreenLightState::Green,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::Green,
-            ALERT_FLASH_MILLISECONDS,
-            RedAmberGreenLightState::Green,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::FlashingRedAmber,
-            0,
-            RedAmberGreenLightState::Red,
-            BooleanLightState::On,
-        );
-        assert_light_state_for_mode(
-            RedAmberGreenLightMode::FlashingRedAmber,
-            ALERT_FLASH_MILLISECONDS,
-            RedAmberGreenLightState::Amber,
-            BooleanLightState::Off,
-        );
+    }
+
+    #[test]
+    fn red_amber_green_states_for_modes() {
+        use RedAmberGreenLightState::*;
+
+        assert_rag_mapping(RedAmberGreenLightMode::Off, Off, Off);
+        assert_rag_mapping(RedAmberGreenLightMode::Red, Red, Red);
+        assert_rag_mapping(RedAmberGreenLightMode::Amber, Amber, Amber);
+        assert_rag_mapping(RedAmberGreenLightMode::Green, Green, Green);
+        assert_rag_mapping(RedAmberGreenLightMode::FlashingRedAmber, Red, Amber);
     }
 }

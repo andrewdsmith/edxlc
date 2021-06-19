@@ -198,24 +198,6 @@ pub enum BooleanLightState {
     On,
 }
 
-/// The state for a light of unknown type, holding the states for both boolean
-/// and red/amber/green lights.
-#[derive(Debug, PartialEq)]
-pub struct LightState {
-    pub boolean: BooleanLightState,
-    pub red_amber_green: RedAmberGreenLightState,
-}
-
-impl LightState {
-    /// Returns a new `LightState` instance.
-    pub fn new(red_amber_green: RedAmberGreenLightState, boolean: BooleanLightState) -> Self {
-        Self {
-            red_amber_green,
-            boolean,
-        }
-    }
-}
-
 /// Common methods for interacting with light mapped to one or more device LEDs.
 trait LightMapping {
     /// Returns true if the light's currently set mode is animated.
