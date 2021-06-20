@@ -1,4 +1,4 @@
-use crate::x52pro::device::RedAmberGreenLightMode;
+use crate::x52pro::device::{BooleanLightMode, RedAmberGreenLightMode};
 use crate::x52pro::direct_output::DirectOutput;
 use std::time::SystemTime;
 
@@ -38,7 +38,7 @@ impl LightModeToStateMapper {
     pub fn update_binary_light(
         &self,
         direct_output: &DirectOutput,
-        light_mode: &RedAmberGreenLightMode,
+        light_mode: &BooleanLightMode,
         led_id: u32,
     ) {
         let light_state = boolean_state_for_mode(light_mode, self.milliseconds_elapsed());
@@ -82,16 +82,11 @@ impl LightModeToStateMapper {
 
 /// Returns the boolean light state that corrsponds to the given light mode at
 /// the given time offset (in milliseconds).
-fn boolean_state_for_mode(
-    light_mode: &RedAmberGreenLightMode,
-    milliseconds: u128,
-) -> BooleanLightState {
+fn boolean_state_for_mode(light_mode: &BooleanLightMode, milliseconds: u128) -> BooleanLightState {
     match light_mode {
-        RedAmberGreenLightMode::Off => BooleanLightState::Off,
-        RedAmberGreenLightMode::Red => BooleanLightState::On,
-        RedAmberGreenLightMode::Amber => BooleanLightState::On,
-        RedAmberGreenLightMode::Green => BooleanLightState::On,
-        RedAmberGreenLightMode::FlashingRedAmber => {
+        BooleanLightMode::Off => BooleanLightState::Off,
+        BooleanLightMode::On => BooleanLightState::On,
+        BooleanLightMode::Flashing => {
             animated_state(milliseconds, BooleanLightState::On, BooleanLightState::Off)
         }
     }
@@ -131,7 +126,7 @@ mod tests {
     use super::*;
 
     fn assert_boolean_mapping(
-        mode: RedAmberGreenLightMode,
+        mode: BooleanLightMode,
         state_now: BooleanLightState,
         state_later: BooleanLightState,
     ) {
@@ -146,11 +141,9 @@ mod tests {
     fn boolean_light_states_for_modes() {
         use BooleanLightState::*;
 
-        assert_boolean_mapping(RedAmberGreenLightMode::Off, Off, Off);
-        assert_boolean_mapping(RedAmberGreenLightMode::Red, On, On);
-        assert_boolean_mapping(RedAmberGreenLightMode::Amber, On, On);
-        assert_boolean_mapping(RedAmberGreenLightMode::Green, On, On);
-        assert_boolean_mapping(RedAmberGreenLightMode::FlashingRedAmber, On, Off);
+        assert_boolean_mapping(BooleanLightMode::Off, Off, Off);
+        assert_boolean_mapping(BooleanLightMode::On, On, On);
+        assert_boolean_mapping(BooleanLightMode::Flashing, On, Off);
     }
 
     fn assert_rag_mapping(

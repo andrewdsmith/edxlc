@@ -1,21 +1,21 @@
 use crate::game::StatusLevel;
-use crate::x52pro::device::RedAmberGreenLightMode;
+use crate::x52pro::device::LightMode;
 
 /// Maps status levels to light modes based on the given configuration.
 pub struct StatusLevelToModeMapper {
-    inactive: RedAmberGreenLightMode,
-    active: RedAmberGreenLightMode,
-    blocked: RedAmberGreenLightMode,
-    alert: RedAmberGreenLightMode,
+    inactive: LightMode,
+    active: LightMode,
+    blocked: LightMode,
+    alert: LightMode,
 }
 
 impl StatusLevelToModeMapper {
     /// Returns a new instance the mapper.
     pub fn new(
-        inactive: RedAmberGreenLightMode,
-        active: RedAmberGreenLightMode,
-        blocked: RedAmberGreenLightMode,
-        alert: RedAmberGreenLightMode,
+        inactive: LightMode,
+        active: LightMode,
+        blocked: LightMode,
+        alert: LightMode,
     ) -> Self {
         Self {
             inactive,
@@ -25,7 +25,7 @@ impl StatusLevelToModeMapper {
         }
     }
 
-    pub fn map(&self, status_level: &StatusLevel) -> RedAmberGreenLightMode {
+    pub fn map(&self, status_level: &StatusLevel) -> LightMode {
         match status_level {
             StatusLevel::Inactive => self.inactive,
             StatusLevel::Active => self.active,

@@ -162,7 +162,25 @@ enum Light {
     T5T6,
 }
 
-/// Available states for lights on the device.
+/// Available modes for boolean lights on the device.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum BooleanLightMode {
+    Off,
+    On,
+    Flashing,
+}
+
+impl BooleanLightMode {
+    /// Returns true if the mode requires animation, i.e. changes over time.
+    fn is_animated(&self) -> bool {
+        match self {
+            Self::Flashing => true,
+            _ => false,
+        }
+    }
+}
+
+/// Available modes for red/amber/green lights on the device.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RedAmberGreenLightMode {
     Off,
@@ -182,13 +200,28 @@ impl RedAmberGreenLightMode {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct LightMode {
+    boolean: BooleanLightMode,
+    red_amber_green: RedAmberGreenLightMode,
+}
+
+impl LightMode {
+    pub fn new(boolean: BooleanLightMode, red_amber_green: RedAmberGreenLightMode) -> Self {
+        Self {
+            boolean,
+            red_amber_green,
+        }
+    }
+}
+
 /// Common methods for interacting with light mapped to one or more device LEDs.
 trait LightMapping {
     /// Returns true if the light's currently set mode is animated.
     fn is_animated(&self) -> bool;
 
     /// Updates the light's mode.
-    fn set_mode(&mut self, light_mode: RedAmberGreenLightMode);
+    fn set_mode(&mut self, light_mode: LightMode);
 
     /// Updates the mapped LEDs using the given `DirectOutput` object and based
     /// on the current mode and the given `LightModeToStateMapper`.
@@ -202,14 +235,14 @@ trait LightMapping {
 /// The mapping of a light to a single device LED.
 struct BinaryLightMapping {
     led_id: u32,
-    light_mode: RedAmberGreenLightMode,
+    light_mode: BooleanLightMode,
 }
 
 impl BinaryLightMapping {
     fn new(led_id: u32) -> Self {
         Self {
             led_id,
-            light_mode: RedAmberGreenLightMode::Off,
+            light_mode: BooleanLightMode::Off,
         }
     }
 }
@@ -219,8 +252,8 @@ impl LightMapping for BinaryLightMapping {
         self.light_mode.is_animated()
     }
 
-    fn set_mode(&mut self, light_mode: RedAmberGreenLightMode) {
-        self.light_mode = light_mode;
+    fn set_mode(&mut self, light_mode: LightMode) {
+        self.light_mode = light_mode.boolean;
     }
 
     fn update_state(
@@ -258,8 +291,8 @@ impl LightMapping for RedGreenLightMapping {
         self.light_mode.is_animated()
     }
 
-    fn set_mode(&mut self, light_mode: RedAmberGreenLightMode) {
-        self.light_mode = light_mode;
+    fn set_mode(&mut self, light_mode: LightMode) {
+        self.light_mode = light_mode.red_amber_green;
     }
 
     fn update_state(

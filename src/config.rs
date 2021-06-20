@@ -1,4 +1,7 @@
-use crate::x52pro::{device::RedAmberGreenLightMode, StatusLevelToModeMapper};
+use crate::x52pro::{
+    device::{BooleanLightMode, LightMode, RedAmberGreenLightMode},
+    StatusLevelToModeMapper,
+};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -49,13 +52,16 @@ impl Config {
 
 /// Returns the `RedAmberGreenLightMode` value corresponding to the referenced string value.
 /// Panics is the string does not map to an `RedAmberGreenLightMode` value.
-fn led_state_from_config(value: &String) -> RedAmberGreenLightMode {
+fn led_state_from_config(value: &String) -> LightMode {
     match value.as_str() {
-        CONFIG_OFF => RedAmberGreenLightMode::Off,
-        CONFIG_RED => RedAmberGreenLightMode::Red,
-        CONFIG_AMBER => RedAmberGreenLightMode::Amber,
-        CONFIG_GREEN => RedAmberGreenLightMode::Green,
-        CONFIG_RED_AMBER => RedAmberGreenLightMode::FlashingRedAmber,
+        CONFIG_OFF => LightMode::new(BooleanLightMode::Off, RedAmberGreenLightMode::Off),
+        CONFIG_RED => LightMode::new(BooleanLightMode::On, RedAmberGreenLightMode::Red),
+        CONFIG_AMBER => LightMode::new(BooleanLightMode::On, RedAmberGreenLightMode::Amber),
+        CONFIG_GREEN => LightMode::new(BooleanLightMode::On, RedAmberGreenLightMode::Green),
+        CONFIG_RED_AMBER => LightMode::new(
+            BooleanLightMode::Flashing,
+            RedAmberGreenLightMode::FlashingRedAmber,
+        ),
         _ => panic!("Unsupported configuration value '{}'", value),
     }
 }
@@ -107,17 +113,42 @@ mod tests {
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
     }
 
-    fn assert_led_state_from_config(input: &str, expected: RedAmberGreenLightMode) {
+    fn assert_led_state_from_config(
+        input: &str,
+        boolean: BooleanLightMode,
+        red_amber_green: RedAmberGreenLightMode,
+    ) {
+        let expected = LightMode::new(boolean, red_amber_green);
         assert_eq!(led_state_from_config(&String::from(input)), expected);
     }
 
     #[test]
     fn led_state_from_string_maps_strings_to_values() {
-        assert_led_state_from_config(CONFIG_OFF, RedAmberGreenLightMode::Off);
-        assert_led_state_from_config(CONFIG_RED, RedAmberGreenLightMode::Red);
-        assert_led_state_from_config(CONFIG_AMBER, RedAmberGreenLightMode::Amber);
-        assert_led_state_from_config(CONFIG_GREEN, RedAmberGreenLightMode::Green);
-        assert_led_state_from_config(CONFIG_RED_AMBER, RedAmberGreenLightMode::FlashingRedAmber);
+        assert_led_state_from_config(
+            CONFIG_OFF,
+            BooleanLightMode::Off,
+            RedAmberGreenLightMode::Off,
+        );
+        assert_led_state_from_config(
+            CONFIG_RED,
+            BooleanLightMode::On,
+            RedAmberGreenLightMode::Red,
+        );
+        assert_led_state_from_config(
+            CONFIG_AMBER,
+            BooleanLightMode::On,
+            RedAmberGreenLightMode::Amber,
+        );
+        assert_led_state_from_config(
+            CONFIG_GREEN,
+            BooleanLightMode::On,
+            RedAmberGreenLightMode::Green,
+        );
+        assert_led_state_from_config(
+            CONFIG_RED_AMBER,
+            BooleanLightMode::Flashing,
+            RedAmberGreenLightMode::FlashingRedAmber,
+        );
     }
 
     #[test]
