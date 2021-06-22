@@ -2,8 +2,11 @@
 
 ## Version 1.7
 
-- Supports `off` state for button lights in configuration
-- Supports the Fire button
+- Supports `off` state for red/amber/green lights in configuration
+- Supports the Fire button and its boolean light
+- Supports boolean and red/amber/green light modes in configuration -
+  **Important**: Old configuration files are now invalid; delete and let the
+  app recreate
 
 ## Version 1.6
 

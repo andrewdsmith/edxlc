@@ -8,6 +8,10 @@ use std::{fs, path::Path};
 
 const CONFIG_FILENAME: &str = "edxlc.toml";
 
+const CONFIG_BOOLEAN_OFF: &str = "off";
+const CONFIG_BOOLEAN_ON: &str = "on";
+const CONFIG_BOOLEAN_FLASH: &str = "flash";
+
 const CONFIG_OFF: &str = "off";
 const CONFIG_RED: &str = "red";
 const CONFIG_AMBER: &str = "amber";
@@ -17,10 +21,10 @@ const CONFIG_RED_AMBER: &str = "red-amber";
 /// Raw configuration string values as read from a configuration file.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Config {
-    inactive: String,
-    active: String,
-    blocked: String,
-    alert: String,
+    inactive: (String, String),
+    active: (String, String),
+    blocked: (String, String),
+    alert: (String, String),
 }
 
 impl Config {
@@ -42,28 +46,37 @@ impl Config {
     /// string values held by the instance.
     pub fn status_level_to_mode_mapper(&self) -> StatusLevelToModeMapper {
         StatusLevelToModeMapper::new(
-            led_state_from_config(&self.inactive),
-            led_state_from_config(&self.active),
-            led_state_from_config(&self.blocked),
-            led_state_from_config(&self.alert),
+            light_mode_from_config_values(&self.inactive),
+            light_mode_from_config_values(&self.active),
+            light_mode_from_config_values(&self.blocked),
+            light_mode_from_config_values(&self.alert),
         )
     }
 }
 
-/// Returns the `RedAmberGreenLightMode` value corresponding to the referenced string value.
-/// Panics is the string does not map to an `RedAmberGreenLightMode` value.
-fn led_state_from_config(value: &String) -> LightMode {
-    match value.as_str() {
-        CONFIG_OFF => LightMode::new(BooleanLightMode::Off, RedAmberGreenLightMode::Off),
-        CONFIG_RED => LightMode::new(BooleanLightMode::On, RedAmberGreenLightMode::Red),
-        CONFIG_AMBER => LightMode::new(BooleanLightMode::On, RedAmberGreenLightMode::Amber),
-        CONFIG_GREEN => LightMode::new(BooleanLightMode::On, RedAmberGreenLightMode::Green),
-        CONFIG_RED_AMBER => LightMode::new(
-            BooleanLightMode::Flashing,
-            RedAmberGreenLightMode::FlashingRedAmber,
+/// Returns the `LightMode` value corresponding to the referenced strings.
+/// Panics if either of the string do not map to corresponding enum values.
+fn light_mode_from_config_values(value: &(String, String)) -> LightMode {
+    let (boolean, red_amber_green) = value;
+    let boolean = match boolean.as_str() {
+        CONFIG_BOOLEAN_OFF => BooleanLightMode::Off,
+        CONFIG_BOOLEAN_ON => BooleanLightMode::On,
+        CONFIG_BOOLEAN_FLASH => BooleanLightMode::Flashing,
+        _ => panic!("Unsupported boolean configuration value '{}'", boolean),
+    };
+    let red_amber_green = match red_amber_green.as_str() {
+        CONFIG_OFF => RedAmberGreenLightMode::Off,
+        CONFIG_RED => RedAmberGreenLightMode::Red,
+        CONFIG_AMBER => RedAmberGreenLightMode::Amber,
+        CONFIG_GREEN => RedAmberGreenLightMode::Green,
+        CONFIG_RED_AMBER => RedAmberGreenLightMode::FlashingRedAmber,
+        _ => panic!(
+            "Unsupported red/amber/green configuration value '{}'",
+            red_amber_green
         ),
-        _ => panic!("Unsupported configuration value '{}'", value),
-    }
+    };
+
+    LightMode::new(boolean, red_amber_green)
 }
 
 /// Writes a default configuration file in the current working directory if a
@@ -77,10 +90,13 @@ pub fn write_default_file_if_missing() {
     info!("Writing default configuration file");
 
     let config = Config {
-        inactive: CONFIG_GREEN.to_string(),
-        active: CONFIG_AMBER.to_string(),
-        blocked: CONFIG_RED.to_string(),
-        alert: CONFIG_RED_AMBER.to_string(),
+        inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
+        active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
+        blocked: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED.to_string()),
+        alert: (
+            CONFIG_BOOLEAN_FLASH.to_string(),
+            CONFIG_RED_AMBER.to_string(),
+        ),
     };
 
     let toml = toml::to_string(&config).expect("Could not serialize default configuration");
@@ -95,65 +111,78 @@ mod tests {
     fn config_from_toml_returns_an_instance() {
         let toml = format!(
             r#"
-            inactive = "{}"
-            active = "{}"
-            blocked = "{}"
-            alert = "{}"
+            inactive = ["{}", "{}"]
+            active = ["{}", "{}"]
+            blocked = ["{}", "{}"]
+            alert = ["{}", "{}"]
         "#,
-            CONFIG_GREEN, CONFIG_AMBER, CONFIG_RED, CONFIG_RED_AMBER
+            CONFIG_BOOLEAN_OFF,
+            CONFIG_GREEN,
+            CONFIG_BOOLEAN_ON,
+            CONFIG_AMBER,
+            CONFIG_BOOLEAN_ON,
+            CONFIG_RED,
+            CONFIG_BOOLEAN_FLASH,
+            CONFIG_RED_AMBER
         );
 
         let expected = Config {
-            inactive: CONFIG_GREEN.to_string(),
-            active: CONFIG_AMBER.to_string(),
-            blocked: CONFIG_RED.to_string(),
-            alert: CONFIG_RED_AMBER.to_string(),
+            inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
+            active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
+            blocked: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_RED.to_string()),
+            alert: (
+                CONFIG_BOOLEAN_FLASH.to_string(),
+                CONFIG_RED_AMBER.to_string(),
+            ),
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
     }
 
-    fn assert_led_state_from_config(
-        input: &str,
-        boolean: BooleanLightMode,
-        red_amber_green: RedAmberGreenLightMode,
-    ) {
-        let expected = LightMode::new(boolean, red_amber_green);
-        assert_eq!(led_state_from_config(&String::from(input)), expected);
+    fn assert_boolean_light_mode(input: &str, boolean: BooleanLightMode) {
+        let expected = LightMode::new(boolean, RedAmberGreenLightMode::Off);
+        assert_eq!(
+            light_mode_from_config_values(&(String::from(input), CONFIG_OFF.to_string())),
+            expected
+        );
     }
 
     #[test]
-    fn led_state_from_string_maps_strings_to_values() {
-        assert_led_state_from_config(
-            CONFIG_OFF,
-            BooleanLightMode::Off,
-            RedAmberGreenLightMode::Off,
+    fn light_mode_from_config_values_boolean_values() {
+        assert_boolean_light_mode(CONFIG_BOOLEAN_OFF, BooleanLightMode::Off);
+        assert_boolean_light_mode(CONFIG_BOOLEAN_ON, BooleanLightMode::On);
+        assert_boolean_light_mode(CONFIG_BOOLEAN_FLASH, BooleanLightMode::Flashing);
+    }
+
+    #[test]
+    #[should_panic]
+    fn light_mode_from_config_values_boolean_unsupported_value() {
+        assert_boolean_light_mode("inverted", BooleanLightMode::Off);
+    }
+
+    fn assert_red_amber_green_light_mode(input: &str, red_amber_green: RedAmberGreenLightMode) {
+        let expected = LightMode::new(BooleanLightMode::Off, red_amber_green);
+        assert_eq!(
+            light_mode_from_config_values(&(CONFIG_BOOLEAN_OFF.to_string(), String::from(input))),
+            expected
         );
-        assert_led_state_from_config(
-            CONFIG_RED,
-            BooleanLightMode::On,
-            RedAmberGreenLightMode::Red,
-        );
-        assert_led_state_from_config(
-            CONFIG_AMBER,
-            BooleanLightMode::On,
-            RedAmberGreenLightMode::Amber,
-        );
-        assert_led_state_from_config(
-            CONFIG_GREEN,
-            BooleanLightMode::On,
-            RedAmberGreenLightMode::Green,
-        );
-        assert_led_state_from_config(
+    }
+
+    #[test]
+    fn light_mode_from_config_values_rag_values() {
+        assert_red_amber_green_light_mode(CONFIG_OFF, RedAmberGreenLightMode::Off);
+        assert_red_amber_green_light_mode(CONFIG_RED, RedAmberGreenLightMode::Red);
+        assert_red_amber_green_light_mode(CONFIG_AMBER, RedAmberGreenLightMode::Amber);
+        assert_red_amber_green_light_mode(CONFIG_GREEN, RedAmberGreenLightMode::Green);
+        assert_red_amber_green_light_mode(
             CONFIG_RED_AMBER,
-            BooleanLightMode::Flashing,
             RedAmberGreenLightMode::FlashingRedAmber,
         );
     }
 
     #[test]
     #[should_panic]
-    fn led_state_from_string_panics_on_unsupported_values() {
-        led_state_from_config(&String::from("blue"));
+    fn light_mode_from_config_values_rag_unsupported_values() {
+        assert_red_amber_green_light_mode("blue", RedAmberGreenLightMode::Off);
     }
 }

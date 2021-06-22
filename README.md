@@ -13,21 +13,38 @@ The app monitors the state of the following:
 - Silent running
 
 Where a game control for these items is bound to a button on the joystick, the
-button colour will indicate the following states:
+button light will indicate the following states:
 
-- Inactive - Green - Not currently activated but can be activated
-- Active - Amber - Currently activated
-- Blocked - Red - Cannot be activated
-- Alert - Flashing Red/Amber - May need to be activated urgently
+- Inactive - Green (Off) - Not currently activated but can be activated
+- Active - Amber (On) - Currently activated
+- Blocked - Red (Off) - Cannot be activated
+- Alert - Flashing Red/Amber (Flashing) - May need to be activated urgently
 
 An example blocked state is FSD activation while mass-locked. Examples of alert
 states include heat sinks when overheating and undeployed landing gear after
 docking permission has been granted.
 
-The colours used by the app for each state can be configured by editing the
-`edxlc.toml` file. This file is created automatically when the app is first run
-if it does not exist. You must restart the app to pick up changes in this
-configuration. The supported colour values are:
+The light behaviour can be configured by editing the `edxlc.toml` file. This
+file is created automatically when the app is first run if it does not exist.
+You must restart the app to pick up changes in this configuration.
+
+The default configuration is:
+
+```toml
+inactive = ["off", "green"]
+active = ["on", "amber"]
+blocked = ["off", "red"]
+alert = ["flash", "red-amber"]
+```
+
+For each state you specify the light mode for boolean and red/amber/green
+lights. For boolean lights, the supported modes are:
+
+- `off`
+- `on`
+- `flash`
+
+For red/amber/green ligths, the supported modes are:
 
 - `off`
 - `green`
@@ -40,9 +57,7 @@ so if you're using any other pre-defined set of bindings it won't work (yet).
 
 The app does not currently support controls mapped to the POV 2 hat or the
 throttle. The aim is to support these, along with further controls and states,
-in the fullness of time. Note that the Fire button only supports on and off,
-i.e. any value in the configuration other than `off` will result in the button
-light being on.
+in the fullness of time.
 
 The app runs in a console window and can be exited with Ctrl+C.
 
