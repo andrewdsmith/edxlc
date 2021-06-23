@@ -5,6 +5,7 @@ type StatusBitField = u64;
 
 // See: https://elite-journal.readthedocs.io/en/latest/Status%20File/
 const LANDING_GEAR_DEPLOYED: StatusBitField = 1 << 2;
+const HARDPOINTS_DEPLOYED: StatusBitField = 1 << 6;
 const EXTERNAL_LIGHTS_ON: StatusBitField = 1 << 8;
 const CARGO_SCOOP_DEPLOYED: StatusBitField = 1 << 9;
 const SILENT_RUNNING: StatusBitField = 1 << 10;
@@ -23,10 +24,8 @@ const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | MASS_LOCKED
     | FRAME_SHIFT_DRIVE_COOLDOWN
     | OVERHEATING
-    | SILENT_RUNNING;
-
-const FRAME_SHIFT_DRIVE_BLOCKED: StatusBitField =
-    CARGO_SCOOP_DEPLOYED | MASS_LOCKED | FRAME_SHIFT_DRIVE_COOLDOWN;
+    | SILENT_RUNNING
+    | HARDPOINTS_DEPLOYED;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(Clone, Copy, PartialEq)]
@@ -129,7 +128,12 @@ impl Ship {
                             StatusLevel::Alert,
                         ),
                         ConditionStatusLevelMapping::new(
-                            Condition::Any(FRAME_SHIFT_DRIVE_BLOCKED),
+                            Condition::Any(
+                                CARGO_SCOOP_DEPLOYED
+                                    | MASS_LOCKED
+                                    | FRAME_SHIFT_DRIVE_COOLDOWN
+                                    | HARDPOINTS_DEPLOYED,
+                            ),
                             StatusLevel::Blocked,
                         ),
                         ConditionStatusLevelMapping::new(
@@ -262,6 +266,7 @@ mod tests {
             MASS_LOCKED,
             FRAME_SHIFT_DRIVE_COOLDOWN,
             OVERHEATING,
+            HARDPOINTS_DEPLOYED,
         ]
     }
 
@@ -389,6 +394,15 @@ mod tests {
     fn frame_shift_drive_cooldown_maps_to_frame_shift_drive_blocked() {
         assert_status(
             FRAME_SHIFT_DRIVE_COOLDOWN,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Blocked,
+        );
+    }
+
+    #[test]
+    fn hardpoints_deployed_maps_to_frame_shift_drive_blocked() {
+        assert_status(
+            HARDPOINTS_DEPLOYED,
             Attribute::FrameShiftDrive,
             StatusLevel::Blocked,
         );

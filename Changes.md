@@ -4,9 +4,11 @@
 
 - Supports `off` state for red/amber/green lights in configuration
 - Supports the Fire button and its boolean light
-- Supports boolean and red/amber/green light modes in configuration -
-  **Important**: Old configuration files are now invalid; delete and let the
-  app recreate
+- Supports both boolean and red/amber/green light modes in configuration -
+  **Important**: Old configuration files are now invalid; see README for
+  details on the new format; you can delete or rename your old file and let
+  the app create a new, valid file
+- Shows blocked state for FSD when hardpoints are deployed
 
 ## Version 1.6
 
