@@ -8,7 +8,9 @@
   **Important**: Old configuration files are now invalid; see README for
   details on the new format; you can delete or rename your old file and let
   the app create a new, valid file
-- Shows blocked state for FSD when hardpoints are deployed
+- Shows blocked state for FSD when hardpoints are deployed (unless in
+  supercruise).
+- Shows active state for FSD when in supercruise.
 
 ## Version 1.6
 

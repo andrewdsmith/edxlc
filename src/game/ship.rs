@@ -5,6 +5,7 @@ type StatusBitField = u64;
 
 // See: https://elite-journal.readthedocs.io/en/latest/Status%20File/
 const LANDING_GEAR_DEPLOYED: StatusBitField = 1 << 2;
+const SUPERCRUISE: StatusBitField = 1 << 4;
 const HARDPOINTS_DEPLOYED: StatusBitField = 1 << 6;
 const EXTERNAL_LIGHTS_ON: StatusBitField = 1 << 8;
 const CARGO_SCOOP_DEPLOYED: StatusBitField = 1 << 9;
@@ -25,7 +26,8 @@ const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | FRAME_SHIFT_DRIVE_COOLDOWN
     | OVERHEATING
     | SILENT_RUNNING
-    | HARDPOINTS_DEPLOYED;
+    | HARDPOINTS_DEPLOYED
+    | SUPERCRUISE;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(Clone, Copy, PartialEq)]
@@ -123,6 +125,13 @@ impl Ship {
                 AttributeStatusLevelMappings::new(
                     Attribute::FrameShiftDrive,
                     vec![
+                        // Supercruise is higher precendence than normal
+                        // flight, specifically for blocking states like
+                        // hardpoints deployed.
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(SUPERCRUISE),
+                            StatusLevel::Active,
+                        ),
                         ConditionStatusLevelMapping::new(
                             Condition::All(FRAME_SHIFT_DRIVE_CHARGING | OVERHEATING),
                             StatusLevel::Alert,
@@ -267,6 +276,7 @@ mod tests {
             FRAME_SHIFT_DRIVE_COOLDOWN,
             OVERHEATING,
             HARDPOINTS_DEPLOYED,
+            SUPERCRUISE,
         ]
     }
 
@@ -450,6 +460,20 @@ mod tests {
             SILENT_RUNNING + OVERHEATING,
             Attribute::SilentRunning,
             StatusLevel::Alert,
+        );
+    }
+
+    #[test]
+    fn supercruise_maps_to_frame_shift_drive_active() {
+        assert_status(SUPERCRUISE, Attribute::FrameShiftDrive, StatusLevel::Active);
+    }
+
+    #[test]
+    fn supercruise_and_hardpoints_deployed_and_maps_to_frame_shift_drive_active() {
+        assert_status(
+            SUPERCRUISE + HARDPOINTS_DEPLOYED,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Active,
         );
     }
 }
