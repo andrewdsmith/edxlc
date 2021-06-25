@@ -35,6 +35,7 @@ pub enum Attribute {
     CargoScoop,
     ExternalLights,
     FrameShiftDrive,
+    Hardpoints,
     HeatSink,
     LandingGear,
     SilentRunning,
@@ -183,6 +184,13 @@ impl Ship {
                             StatusLevel::Active,
                         ),
                     ],
+                ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::Hardpoints,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(HARDPOINTS_DEPLOYED),
+                        StatusLevel::Active,
+                    )],
                 ),
             ],
         }
@@ -406,6 +414,15 @@ mod tests {
             FRAME_SHIFT_DRIVE_COOLDOWN,
             Attribute::FrameShiftDrive,
             StatusLevel::Blocked,
+        );
+    }
+
+    #[test]
+    fn hardpoints_deployed_maps_to_hardpoints_active() {
+        assert_status(
+            HARDPOINTS_DEPLOYED,
+            Attribute::Hardpoints,
+            StatusLevel::Active,
         );
     }
 

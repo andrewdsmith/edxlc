@@ -141,6 +141,7 @@ fn set_x52pro_inputs_from_ship_statues(
                 Control::HyperSuperCombination,
                 Control::Supercruise,
             ],
+            Attribute::Hardpoints => vec![Control::Hardpoints],
             Attribute::HeatSink => vec![Control::HeatSink],
             Attribute::LandingGear => vec![Control::LandingGear],
             Attribute::SilentRunning => vec![Control::SilentRunning],

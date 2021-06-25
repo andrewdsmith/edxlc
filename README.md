@@ -11,6 +11,7 @@ The app monitors the state of the following:
 - External lights
 - Frame shift drive (FSD)
 - Silent running
+- Hardpoints
 
 Where a game control for these items is bound to a button on the joystick, the
 button light will indicate the following states:

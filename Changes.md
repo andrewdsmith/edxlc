@@ -2,15 +2,17 @@
 
 ## Version 1.7
 
-- Supports `off` state for red/amber/green lights in configuration
+- Supports `off` mode for red/amber/green lights in configuration
 - Supports the Fire button and its boolean light
 - Supports both boolean and red/amber/green light modes in configuration -
   **Important**: Old configuration files are now invalid; see README for
   details on the new format; you can delete or rename your old file and let
   the app create a new, valid file
+- Shows active state for hardpoints when deployed and inactive state when not
+  deployed
+- Shows active state for FSD when in supercruise
 - Shows blocked state for FSD when hardpoints are deployed (unless in
-  supercruise).
-- Shows active state for FSD when in supercruise.
+  supercruise)
 
 ## Version 1.6
 
