@@ -2,7 +2,7 @@
 
 ## Version 1.8
 
-- Shows blocked state for FSD when landing gear deployed
+- Shows blocked state for FSD and boost when landing gear deployed
 
 ## Version 1.7
 

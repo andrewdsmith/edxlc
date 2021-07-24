@@ -134,6 +134,7 @@ fn set_x52pro_inputs_from_ship_statues(
 ) {
     fn controls_for_status(status: &game::Status) -> Vec<Control> {
         match status.attribute {
+            Attribute::Boost => vec![Control::Boost],
             Attribute::CargoScoop => vec![Control::CargoScoop],
             Attribute::ExternalLights => vec![Control::ExternalLights],
             Attribute::FrameShiftDrive => vec![

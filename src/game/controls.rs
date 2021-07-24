@@ -18,6 +18,7 @@ const X52PRO_T6: &str = "Joy_14";
 
 /// A supported game control that can be mapped to an X52Pro input.
 pub enum Control {
+    Boost,
     CargoScoop,
     ExternalLights,
     Hardpoints,
@@ -52,6 +53,7 @@ impl Controls {
     /// supported inputs is bound to the given control.
     pub fn inputs_for_control(&self, control: Control) -> Vec<Input> {
         let control_binding = match control {
+            Control::Boost => &self.file.boost,
             Control::CargoScoop => &self.file.cargo_scoop,
             Control::ExternalLights => &self.file.external_lights,
             Control::Hardpoints => &self.file.hardpoints,
@@ -119,6 +121,7 @@ mod tests {
             silent_running: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_A), ("", "")),
             heat_sink: ControlBinding::new((X52PRO_DEVICE, X52PRO_T6), ("", "")),
             hardpoints: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_B), ("", "")),
+            boost: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_D), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
 
@@ -157,6 +160,10 @@ mod tests {
         assert_eq!(
             controls.inputs_for_control(Control::Hardpoints),
             vec![Input::FireB]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::Boost),
+            vec![Input::FireD]
         );
     }
 

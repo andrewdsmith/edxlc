@@ -32,6 +32,7 @@ const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(Clone, Copy, PartialEq)]
 pub enum Attribute {
+    Boost,
     CargoScoop,
     ExternalLights,
     FrameShiftDrive,
@@ -191,6 +192,13 @@ impl Ship {
                     vec![ConditionStatusLevelMapping::new(
                         Condition::All(HARDPOINTS_DEPLOYED),
                         StatusLevel::Active,
+                    )],
+                ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::Boost,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(LANDING_GEAR_DEPLOYED),
+                        StatusLevel::Blocked,
                     )],
                 ),
             ],
@@ -448,6 +456,15 @@ mod tests {
     #[test]
     fn landing_gear_not_deployed_and_docking_maps_to_landing_gear_alert() {
         assert_status(DOCKING, Attribute::LandingGear, StatusLevel::Alert);
+    }
+
+    #[test]
+    fn landing_gear_deployed_maps_to_boost_blocked() {
+        assert_status(
+            LANDING_GEAR_DEPLOYED,
+            Attribute::Boost,
+            StatusLevel::Blocked,
+        );
     }
 
     #[test]

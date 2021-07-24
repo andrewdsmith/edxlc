@@ -15,6 +15,8 @@ pub struct ControlBindings {
     pub landing_gear: ControlBinding,
     #[serde(rename = "DeployHardpointToggle")]
     pub hardpoints: ControlBinding,
+    #[serde(rename = "UseBoostJuice")]
+    pub boost: ControlBinding,
     #[serde(rename = "HyperSuperCombination")]
     pub hyper_super_combo: ControlBinding,
     #[serde(rename = "Supercruise")]
@@ -98,6 +100,10 @@ mod tests {
                     <Primary Device="D5" Key="K5" />
                     <Secondary Device="D6" Key="K6" />
                 </LandingGearToggle>
+                <UseBoostJuice>
+                    <Primary Device="D19" Key="K19" />
+                    <Secondary Device="D20" Key="K20" />
+                </UseBoostJuice>
                 <HyperSuperCombination>
                     <Primary Device="D7" Key="K7" />
                     <Secondary Device="D8" Key="K8" />
@@ -136,6 +142,7 @@ mod tests {
             silent_running: ControlBinding::new(("D13", "K13"), ("D14", "K14")),
             heat_sink: ControlBinding::new(("D15", "K15"), ("D16", "K16")),
             hardpoints: ControlBinding::new(("D17", "K17"), ("D18", "K18")),
+            boost: ControlBinding::new(("D19", "K19"), ("D20", "K20")),
         };
 
         assert_eq!(ControlBindings::from_str(xml), expected);
