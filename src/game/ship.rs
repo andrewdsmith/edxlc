@@ -142,7 +142,8 @@ impl Ship {
                                 CARGO_SCOOP_DEPLOYED
                                     | MASS_LOCKED
                                     | FRAME_SHIFT_DRIVE_COOLDOWN
-                                    | HARDPOINTS_DEPLOYED,
+                                    | HARDPOINTS_DEPLOYED
+                                    | LANDING_GEAR_DEPLOYED,
                             ),
                             StatusLevel::Blocked,
                         ),
@@ -447,6 +448,15 @@ mod tests {
     #[test]
     fn landing_gear_not_deployed_and_docking_maps_to_landing_gear_alert() {
         assert_status(DOCKING, Attribute::LandingGear, StatusLevel::Alert);
+    }
+
+    #[test]
+    fn landing_gear_deployed_maps_to_frame_shift_drive_blocked() {
+        assert_status(
+            LANDING_GEAR_DEPLOYED,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Blocked,
+        );
     }
 
     #[test]

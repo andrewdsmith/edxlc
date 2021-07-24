@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.8
+
+- Shows blocked state for FSD when landing gear deployed
+
 ## Version 1.7
 
 - Supports `off` mode for red/amber/green lights in configuration
