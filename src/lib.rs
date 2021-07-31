@@ -120,6 +120,8 @@ pub fn run() {
                 } else {
                     debug!("Status file updated but change not relevant");
                 }
+
+                debug!("Global ship status: {:?}", ship.global_status());
             }
         }
     }

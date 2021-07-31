@@ -99,6 +99,12 @@ impl AttributeStatusLevelMappings {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub enum GlobalStatus {
+    Normal,
+    HardpointsDeployed,
+}
+
 pub struct Ship {
     status_flags: StatusBitField,
     attribute_status_level_mappings: Vec<AttributeStatusLevelMappings>,
@@ -253,13 +259,22 @@ impl Ship {
         statuses
     }
 
+    /// Returns the current global (highest precendence) status for the ship.
+    pub fn global_status(&self) -> GlobalStatus {
+        if self.any_status_flags_set(HARDPOINTS_DEPLOYED) {
+            GlobalStatus::HardpointsDeployed
+        } else {
+            GlobalStatus::Normal
+        }
+    }
+
     fn status_level_for_condition(
         &self,
         mappings: &Vec<ConditionStatusLevelMapping>,
     ) -> StatusLevel {
         for mapping in mappings {
             if match mapping.condition {
-                Condition::Any(flags) => self.status_flags & flags != 0,
+                Condition::Any(flags) => self.any_status_flags_set(flags),
                 Condition::All(flags) => self.all_status_flags_set(flags),
             } {
                 return mapping.status_level;
@@ -267,6 +282,10 @@ impl Ship {
         }
 
         StatusLevel::Inactive
+    }
+
+    fn any_status_flags_set(&self, flags: StatusBitField) -> bool {
+        self.status_flags & flags != 0
     }
 
     fn all_status_flags_set(&self, flags: StatusBitField) -> bool {
@@ -529,5 +548,17 @@ mod tests {
             Attribute::FrameShiftDrive,
             StatusLevel::Active,
         );
+    }
+
+    fn assert_global_status(status_flags: StatusBitField, expected_global_status: GlobalStatus) {
+        let mut ship = Ship::new();
+        ship.set_status(status_flags);
+        assert_eq!(ship.global_status(), expected_global_status);
+    }
+
+    #[test]
+    fn global_status_precedence_rules() {
+        assert_global_status(0, GlobalStatus::Normal);
+        assert_global_status(HARDPOINTS_DEPLOYED, GlobalStatus::HardpointsDeployed);
     }
 }
