@@ -3,6 +3,8 @@
 ## Version 1.8
 
 - Shows blocked state for FSD and boost when landing gear deployed
+- Correctly shows alert state for FSD when the FSD is charging and the ship is
+  both in supercruise and overheating (already worked properly in normal flight)
 
 ## Version 1.7
 

@@ -127,16 +127,16 @@ impl Ship {
                 AttributeStatusLevelMappings::new(
                     Attribute::FrameShiftDrive,
                     vec![
+                        ConditionStatusLevelMapping::new(
+                            Condition::All(FRAME_SHIFT_DRIVE_CHARGING | OVERHEATING),
+                            StatusLevel::Alert,
+                        ),
                         // Supercruise is higher precendence than normal
                         // flight, specifically for blocking states like
                         // hardpoints deployed.
                         ConditionStatusLevelMapping::new(
                             Condition::All(SUPERCRUISE),
                             StatusLevel::Active,
-                        ),
-                        ConditionStatusLevelMapping::new(
-                            Condition::All(FRAME_SHIFT_DRIVE_CHARGING | OVERHEATING),
-                            StatusLevel::Alert,
                         ),
                         ConditionStatusLevelMapping::new(
                             Condition::Any(
@@ -412,6 +412,16 @@ mod tests {
     fn frame_shift_drive_charging_and_overheating_maps_to_frame_shift_drive_alert() {
         assert_status(
             FRAME_SHIFT_DRIVE_CHARGING + OVERHEATING,
+            Attribute::FrameShiftDrive,
+            StatusLevel::Alert,
+        );
+    }
+
+    #[test]
+    fn frame_shift_drive_charging_and_supercruise_and_overheating_maps_to_frame_shift_drive_alert()
+    {
+        assert_status(
+            FRAME_SHIFT_DRIVE_CHARGING + SUPERCRUISE + OVERHEATING,
             Attribute::FrameShiftDrive,
             StatusLevel::Alert,
         );
