@@ -26,14 +26,13 @@ pub struct Device {
     direct_output: DirectOutput,
     lights: HashMap<Light, Box<dyn LightMapping>>,
     animated_lights: Vec<Light>,
-    status_level_to_mode_mapper: StatusLevelToModeMapper,
     light_mode_to_state_mapper: LightModeToStateMapper,
 }
 
 impl Device {
     /// Returns a new instance of the device interface. Panics if the
     /// underlying `DirectOutput` instance cannot be loaded.
-    pub fn new(status_level_to_mode_mapper: StatusLevelToModeMapper) -> Self {
+    pub fn new() -> Self {
         let mut direct_output = DirectOutput::load();
         direct_output.initialize();
         direct_output.enumerate();
@@ -79,7 +78,6 @@ impl Device {
             direct_output,
             lights,
             animated_lights: vec![],
-            status_level_to_mode_mapper,
             light_mode_to_state_mapper: LightModeToStateMapper::new(),
         }
     }
@@ -87,7 +85,11 @@ impl Device {
     /// Sets each input to specified status level. Repeated inputs with
     /// different status levels are handled by using the highest value. The Light
     /// for the input is looked up, as is the Light state for the status level.
-    pub fn set_input_status_levels(&mut self, input_status_levels: Vec<(Input, StatusLevel)>) {
+    pub fn set_input_status_levels(
+        &mut self,
+        input_status_levels: Vec<(Input, StatusLevel)>,
+        status_level_to_mode_mapper: &StatusLevelToModeMapper,
+    ) {
         // Build a hash of the highest status level keyed by light.
         let mut light_highest_status_levels = HashMap::new();
 
@@ -106,7 +108,7 @@ impl Device {
         self.animated_lights.clear();
 
         for (light, status_level) in &light_highest_status_levels {
-            let light_mode = self.status_level_to_mode_mapper.map(status_level);
+            let light_mode = status_level_to_mode_mapper.map(status_level);
             let light_mapping = self.lights.get_mut(light).expect("Can't find light");
 
             light_mapping.set_mode(light_mode);

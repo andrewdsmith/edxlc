@@ -12,7 +12,7 @@ use log::{debug, info};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use x52pro::Device;
+use x52pro::{Device, StatusLevelToModeMapper};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::ALERT_FLASH_MILLISECONDS as u64;
@@ -33,7 +33,8 @@ pub fn run() {
     let config = Config::from_file();
     debug!("{:?}", config);
 
-    let mut x52pro = Device::new(config.status_level_to_mode_mapper());
+    let mut x52pro = Device::new();
+    let status_level_to_mode_mapper = config.status_level_to_mode_mapper();
 
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);
@@ -116,7 +117,12 @@ pub fn run() {
                 // even pass in the reader itself, although that's increasing
                 // the coupling.
                 if ship.update_status(status) | journal_events_present {
-                    set_x52pro_inputs_from_ship_statues(&mut x52pro, &controls, ship.statuses());
+                    set_x52pro_inputs_from_ship_statues(
+                        &mut x52pro,
+                        &controls,
+                        ship.statuses(),
+                        &status_level_to_mode_mapper,
+                    );
                 } else {
                     debug!("Status file updated but change not relevant");
                 }
@@ -133,6 +139,7 @@ fn set_x52pro_inputs_from_ship_statues(
     x52pro: &mut Device,
     controls: &Controls,
     statuses: Vec<game::Status>,
+    status_level_to_mode_mapper: &StatusLevelToModeMapper,
 ) {
     fn controls_for_status(status: &game::Status) -> Vec<Control> {
         match status.attribute {
@@ -163,5 +170,5 @@ fn set_x52pro_inputs_from_ship_statues(
         }
     }
 
-    x52pro.set_input_status_levels(input_status_levels);
+    x52pro.set_input_status_levels(input_status_levels, status_level_to_mode_mapper);
 }
