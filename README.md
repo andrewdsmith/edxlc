@@ -32,6 +32,7 @@ You must restart the app to pick up changes in this configuration.
 The default configuration is:
 
 ```toml
+[default]
 inactive = ["off", "green"]
 active = ["on", "amber"]
 blocked = ["off", "red"]

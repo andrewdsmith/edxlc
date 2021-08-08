@@ -18,13 +18,19 @@ const CONFIG_AMBER: &str = "amber";
 const CONFIG_GREEN: &str = "green";
 const CONFIG_RED_AMBER: &str = "red-amber";
 
-/// Raw configuration string values as read from a configuration file.
+/// Raw configuration straing values (as read from a configuraiton file) for a specific game mode.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct Config {
+struct ModeConfig {
     inactive: (String, String),
     active: (String, String),
     blocked: (String, String),
     alert: (String, String),
+}
+
+/// Modal configurations as read from a configuration file.
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct Config {
+    default: ModeConfig,
 }
 
 impl Config {
@@ -46,10 +52,10 @@ impl Config {
     /// string values held by the instance.
     pub fn status_level_to_mode_mapper(&self) -> StatusLevelToModeMapper {
         StatusLevelToModeMapper::new(
-            light_mode_from_config_values(&self.inactive),
-            light_mode_from_config_values(&self.active),
-            light_mode_from_config_values(&self.blocked),
-            light_mode_from_config_values(&self.alert),
+            light_mode_from_config_values(&self.default.inactive),
+            light_mode_from_config_values(&self.default.active),
+            light_mode_from_config_values(&self.default.blocked),
+            light_mode_from_config_values(&self.default.alert),
         )
     }
 }
@@ -90,13 +96,15 @@ pub fn write_default_file_if_missing() {
     info!("Writing default configuration file");
 
     let config = Config {
-        inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
-        active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
-        blocked: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED.to_string()),
-        alert: (
-            CONFIG_BOOLEAN_FLASH.to_string(),
-            CONFIG_RED_AMBER.to_string(),
-        ),
+        default: ModeConfig {
+            inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
+            active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
+            blocked: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED.to_string()),
+            alert: (
+                CONFIG_BOOLEAN_FLASH.to_string(),
+                CONFIG_RED_AMBER.to_string(),
+            ),
+        },
     };
 
     let toml = toml::to_string(&config).expect("Could not serialize default configuration");
@@ -111,6 +119,7 @@ mod tests {
     fn config_from_toml_returns_an_instance() {
         let toml = format!(
             r#"
+            [default]
             inactive = ["{}", "{}"]
             active = ["{}", "{}"]
             blocked = ["{}", "{}"]
@@ -127,13 +136,15 @@ mod tests {
         );
 
         let expected = Config {
-            inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
-            active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
-            blocked: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_RED.to_string()),
-            alert: (
-                CONFIG_BOOLEAN_FLASH.to_string(),
-                CONFIG_RED_AMBER.to_string(),
-            ),
+            default: ModeConfig {
+                inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
+                active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
+                blocked: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_RED.to_string()),
+                alert: (
+                    CONFIG_BOOLEAN_FLASH.to_string(),
+                    CONFIG_RED_AMBER.to_string(),
+                ),
+            },
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);

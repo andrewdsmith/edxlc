@@ -2,6 +2,9 @@
 
 ## Version 1.8
 
+- **Important**: Old configuration files are now invalid; see README for
+  details on the new format; you can delete or rename your old file and let
+  the app create a new, valid file
 - Shows blocked state for FSD and boost when landing gear deployed
 - Correctly shows alert state for FSD when the FSD is charging and the ship is
   both in supercruise and overheating (already worked properly in normal flight)
