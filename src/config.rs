@@ -1,3 +1,4 @@
+use crate::game::GlobalStatus;
 use crate::x52pro::{
     device::{BooleanLightMode, LightMode, RedAmberGreenLightMode},
     StatusLevelToModeMapper,
@@ -18,7 +19,7 @@ const CONFIG_AMBER: &str = "amber";
 const CONFIG_GREEN: &str = "green";
 const CONFIG_RED_AMBER: &str = "red-amber";
 
-/// Raw configuration straing values (as read from a configuraiton file) for a specific game mode.
+/// Raw configuration string values (as read from a configuraiton file) for a specific game mode.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 struct ModeConfig {
     inactive: (String, String),
@@ -29,8 +30,10 @@ struct ModeConfig {
 
 /// Modal configurations as read from a configuration file.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Config {
     default: ModeConfig,
+    hardpoints_deployed: ModeConfig,
 }
 
 impl Config {
@@ -48,14 +51,22 @@ impl Config {
         toml::from_str(&toml).expect("Could not load configuration")
     }
 
-    /// Returns a `StatusLevelToModeMapper` configured from the mapped raw
-    /// string values held by the instance.
-    pub fn status_level_to_mode_mapper(&self) -> StatusLevelToModeMapper {
+    /// Returns a `StatusLevelToModeMapper` for the given `GlobalStatus` value,
+    /// as configured from the mapped raw string values held by the instance.
+    pub fn status_level_to_mode_mapper(
+        &self,
+        global_status: GlobalStatus,
+    ) -> StatusLevelToModeMapper {
+        let mode_config = match global_status {
+            GlobalStatus::Normal => &self.default,
+            GlobalStatus::HardpointsDeployed => &self.hardpoints_deployed,
+        };
+
         StatusLevelToModeMapper::new(
-            light_mode_from_config_values(&self.default.inactive),
-            light_mode_from_config_values(&self.default.active),
-            light_mode_from_config_values(&self.default.blocked),
-            light_mode_from_config_values(&self.default.alert),
+            light_mode_from_config_values(&mode_config.inactive),
+            light_mode_from_config_values(&mode_config.active),
+            light_mode_from_config_values(&mode_config.blocked),
+            light_mode_from_config_values(&mode_config.alert),
         )
     }
 }
@@ -105,6 +116,18 @@ pub fn write_default_file_if_missing() {
                 CONFIG_RED_AMBER.to_string(),
             ),
         },
+        hardpoints_deployed: ModeConfig {
+            inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED.to_string()),
+            active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
+            blocked: (
+                CONFIG_BOOLEAN_OFF.to_string(),
+                CONFIG_BOOLEAN_OFF.to_string(),
+            ),
+            alert: (
+                CONFIG_BOOLEAN_FLASH.to_string(),
+                CONFIG_RED_AMBER.to_string(),
+            ),
+        },
     };
 
     let toml = toml::to_string(&config).expect("Could not serialize default configuration");
@@ -124,7 +147,12 @@ mod tests {
             active = ["{}", "{}"]
             blocked = ["{}", "{}"]
             alert = ["{}", "{}"]
-        "#,
+            [hardpoints-deployed]
+            inactive = ["{}", "{}"]
+            active = ["{}", "{}"]
+            blocked = ["{}", "{}"]
+            alert = ["{}", "{}"]
+            "#,
             CONFIG_BOOLEAN_OFF,
             CONFIG_GREEN,
             CONFIG_BOOLEAN_ON,
@@ -132,6 +160,14 @@ mod tests {
             CONFIG_BOOLEAN_ON,
             CONFIG_RED,
             CONFIG_BOOLEAN_FLASH,
+            CONFIG_RED_AMBER,
+            CONFIG_BOOLEAN_ON,
+            CONFIG_GREEN,
+            CONFIG_BOOLEAN_OFF,
+            CONFIG_AMBER,
+            CONFIG_BOOLEAN_FLASH,
+            CONFIG_RED,
+            CONFIG_BOOLEAN_OFF,
             CONFIG_RED_AMBER
         );
 
@@ -144,6 +180,12 @@ mod tests {
                     CONFIG_BOOLEAN_FLASH.to_string(),
                     CONFIG_RED_AMBER.to_string(),
                 ),
+            },
+            hardpoints_deployed: ModeConfig {
+                inactive: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_GREEN.to_string()),
+                active: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_AMBER.to_string()),
+                blocked: (CONFIG_BOOLEAN_FLASH.to_string(), CONFIG_RED.to_string()),
+                alert: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED_AMBER.to_string()),
             },
         };
 

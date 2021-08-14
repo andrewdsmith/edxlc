@@ -34,7 +34,6 @@ pub fn run() {
     debug!("{:?}", config);
 
     let mut x52pro = Device::new();
-    let status_level_to_mode_mapper = config.status_level_to_mode_mapper();
 
     let bindings_file_path = game::file::bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);
@@ -121,13 +120,11 @@ pub fn run() {
                         &mut x52pro,
                         &controls,
                         ship.statuses(),
-                        &status_level_to_mode_mapper,
+                        &config.status_level_to_mode_mapper(ship.global_status()),
                     );
                 } else {
                     debug!("Status file updated but change not relevant");
                 }
-
-                debug!("Global ship status: {:?}", ship.global_status());
             }
         }
     }

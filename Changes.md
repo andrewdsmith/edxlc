@@ -2,6 +2,7 @@
 
 ## Version 1.8
 
+- Supports alternative configuration when hardpoints are deployed
 - **Important**: Old configuration files are now invalid; see README for
   details on the new format; you can delete or rename your old file and let
   the app create a new, valid file

@@ -25,6 +25,9 @@ An example blocked state is FSD activation while mass-locked. Examples of alert
 states include heat sinks when overheating and undeployed landing gear after
 docking permission has been granted.
 
+The overall game state also determines how each state is mapped to a colour,
+meaning different colours are used when hardpoints are deployed as to normal.
+
 The light behaviour can be configured by editing the `edxlc.toml` file. This
 file is created automatically when the app is first run if it does not exist.
 You must restart the app to pick up changes in this configuration.
@@ -36,6 +39,12 @@ The default configuration is:
 inactive = ["off", "green"]
 active = ["on", "amber"]
 blocked = ["off", "red"]
+alert = ["flash", "red-amber"]
+
+[hardpoints-deployed]
+inactive = ["off", "red"]
+active = ["on", "amber"]
+blocked = ["off", "off"]
 alert = ["flash", "red-amber"]
 ```
 
