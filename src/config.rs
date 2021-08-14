@@ -45,7 +45,7 @@ impl Config {
     /// Returns a new instance constructed from the referenced TOML `String`.
     /// Panics if the TOML cannot be parsed.
     fn from_toml(toml: &String) -> Self {
-        toml::from_str(&toml).expect("Could not serialize default configuration")
+        toml::from_str(&toml).expect("Could not load configuration")
     }
 
     /// Returns a `StatusLevelToModeMapper` configured from the mapped raw
