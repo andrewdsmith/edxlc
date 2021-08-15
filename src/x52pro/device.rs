@@ -186,12 +186,14 @@ impl BooleanLightMode {
 }
 
 /// Available modes for red/amber/green lights on the device.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum RedAmberGreenLightMode {
     Off,
     Red,
     Amber,
     Green,
+    #[serde(rename = "red-amber")]
     FlashingRedAmber,
 }
 
