@@ -1,5 +1,6 @@
 use crate::game::StatusLevel;
 use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper, StatusLevelToModeMapper};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 const LED_CLUTCH_RED: u32 = 17;
@@ -165,10 +166,12 @@ enum Light {
 }
 
 /// Available modes for boolean lights on the device.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum BooleanLightMode {
     Off,
     On,
+    #[serde(rename = "flash")]
     Flashing,
 }
 

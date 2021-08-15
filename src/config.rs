@@ -9,10 +9,6 @@ use std::{fs, path::Path};
 
 const CONFIG_FILENAME: &str = "edxlc.toml";
 
-const CONFIG_BOOLEAN_OFF: &str = "off";
-const CONFIG_BOOLEAN_ON: &str = "on";
-const CONFIG_BOOLEAN_FLASH: &str = "flash";
-
 const CONFIG_OFF: &str = "off";
 const CONFIG_RED: &str = "red";
 const CONFIG_AMBER: &str = "amber";
@@ -22,10 +18,10 @@ const CONFIG_RED_AMBER: &str = "red-amber";
 /// Raw configuration string values (as read from a configuraiton file) for a specific game mode.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 struct ModeConfig {
-    inactive: (String, String),
-    active: (String, String),
-    blocked: (String, String),
-    alert: (String, String),
+    inactive: (BooleanLightMode, String),
+    active: (BooleanLightMode, String),
+    blocked: (BooleanLightMode, String),
+    alert: (BooleanLightMode, String),
 }
 
 /// Modal configurations as read from a configuration file.
@@ -73,14 +69,8 @@ impl Config {
 
 /// Returns the `LightMode` value corresponding to the referenced strings.
 /// Panics if either of the string do not map to corresponding enum values.
-fn light_mode_from_config_values(value: &(String, String)) -> LightMode {
+fn light_mode_from_config_values(value: &(BooleanLightMode, String)) -> LightMode {
     let (boolean, red_amber_green) = value;
-    let boolean = match boolean.as_str() {
-        CONFIG_BOOLEAN_OFF => BooleanLightMode::Off,
-        CONFIG_BOOLEAN_ON => BooleanLightMode::On,
-        CONFIG_BOOLEAN_FLASH => BooleanLightMode::Flashing,
-        _ => panic!("Unsupported boolean configuration value '{}'", boolean),
-    };
     let red_amber_green = match red_amber_green.as_str() {
         CONFIG_OFF => RedAmberGreenLightMode::Off,
         CONFIG_RED => RedAmberGreenLightMode::Red,
@@ -93,7 +83,7 @@ fn light_mode_from_config_values(value: &(String, String)) -> LightMode {
         ),
     };
 
-    LightMode::new(boolean, red_amber_green)
+    LightMode::new(*boolean, red_amber_green)
 }
 
 /// Writes a default configuration file in the current working directory if a
@@ -108,25 +98,16 @@ pub fn write_default_file_if_missing() {
 
     let config = Config {
         default: ModeConfig {
-            inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
-            active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
-            blocked: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED.to_string()),
-            alert: (
-                CONFIG_BOOLEAN_FLASH.to_string(),
-                CONFIG_RED_AMBER.to_string(),
-            ),
+            inactive: (BooleanLightMode::Off, CONFIG_GREEN.to_string()),
+            active: (BooleanLightMode::On, CONFIG_AMBER.to_string()),
+            blocked: (BooleanLightMode::Off, CONFIG_RED.to_string()),
+            alert: (BooleanLightMode::Flashing, CONFIG_RED_AMBER.to_string()),
         },
         hardpoints_deployed: ModeConfig {
-            inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED.to_string()),
-            active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
-            blocked: (
-                CONFIG_BOOLEAN_OFF.to_string(),
-                CONFIG_BOOLEAN_OFF.to_string(),
-            ),
-            alert: (
-                CONFIG_BOOLEAN_FLASH.to_string(),
-                CONFIG_RED_AMBER.to_string(),
-            ),
+            inactive: (BooleanLightMode::Off, CONFIG_RED.to_string()),
+            active: (BooleanLightMode::On, CONFIG_AMBER.to_string()),
+            blocked: (BooleanLightMode::Off, CONFIG_OFF.to_string()),
+            alert: (BooleanLightMode::Flashing, CONFIG_RED_AMBER.to_string()),
         },
     };
 
@@ -143,80 +124,48 @@ mod tests {
         let toml = format!(
             r#"
             [default]
-            inactive = ["{}", "{}"]
-            active = ["{}", "{}"]
-            blocked = ["{}", "{}"]
-            alert = ["{}", "{}"]
+            inactive = ["off", "{}"]
+            active = ["on", "{}"]
+            blocked = ["on", "{}"]
+            alert = ["flash", "{}"]
             [hardpoints-deployed]
-            inactive = ["{}", "{}"]
-            active = ["{}", "{}"]
-            blocked = ["{}", "{}"]
-            alert = ["{}", "{}"]
+            inactive = ["on", "{}"]
+            active = ["off", "{}"]
+            blocked = ["flash", "{}"]
+            alert = ["off", "{}"]
             "#,
-            CONFIG_BOOLEAN_OFF,
             CONFIG_GREEN,
-            CONFIG_BOOLEAN_ON,
             CONFIG_AMBER,
-            CONFIG_BOOLEAN_ON,
             CONFIG_RED,
-            CONFIG_BOOLEAN_FLASH,
             CONFIG_RED_AMBER,
-            CONFIG_BOOLEAN_ON,
             CONFIG_GREEN,
-            CONFIG_BOOLEAN_OFF,
             CONFIG_AMBER,
-            CONFIG_BOOLEAN_FLASH,
             CONFIG_RED,
-            CONFIG_BOOLEAN_OFF,
             CONFIG_RED_AMBER
         );
 
         let expected = Config {
             default: ModeConfig {
-                inactive: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_GREEN.to_string()),
-                active: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_AMBER.to_string()),
-                blocked: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_RED.to_string()),
-                alert: (
-                    CONFIG_BOOLEAN_FLASH.to_string(),
-                    CONFIG_RED_AMBER.to_string(),
-                ),
+                inactive: (BooleanLightMode::Off, CONFIG_GREEN.to_string()),
+                active: (BooleanLightMode::On, CONFIG_AMBER.to_string()),
+                blocked: (BooleanLightMode::On, CONFIG_RED.to_string()),
+                alert: (BooleanLightMode::Flashing, CONFIG_RED_AMBER.to_string()),
             },
             hardpoints_deployed: ModeConfig {
-                inactive: (CONFIG_BOOLEAN_ON.to_string(), CONFIG_GREEN.to_string()),
-                active: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_AMBER.to_string()),
-                blocked: (CONFIG_BOOLEAN_FLASH.to_string(), CONFIG_RED.to_string()),
-                alert: (CONFIG_BOOLEAN_OFF.to_string(), CONFIG_RED_AMBER.to_string()),
+                inactive: (BooleanLightMode::On, CONFIG_GREEN.to_string()),
+                active: (BooleanLightMode::Off, CONFIG_AMBER.to_string()),
+                blocked: (BooleanLightMode::Flashing, CONFIG_RED.to_string()),
+                alert: (BooleanLightMode::Off, CONFIG_RED_AMBER.to_string()),
             },
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
     }
 
-    fn assert_boolean_light_mode(input: &str, boolean: BooleanLightMode) {
-        let expected = LightMode::new(boolean, RedAmberGreenLightMode::Off);
-        assert_eq!(
-            light_mode_from_config_values(&(String::from(input), CONFIG_OFF.to_string())),
-            expected
-        );
-    }
-
-    #[test]
-    fn light_mode_from_config_values_boolean_values() {
-        assert_boolean_light_mode(CONFIG_BOOLEAN_OFF, BooleanLightMode::Off);
-        assert_boolean_light_mode(CONFIG_BOOLEAN_ON, BooleanLightMode::On);
-        assert_boolean_light_mode(CONFIG_BOOLEAN_FLASH, BooleanLightMode::Flashing);
-    }
-
-    #[test]
-    #[should_panic]
-    fn light_mode_from_config_values_boolean_unsupported_value() {
-        assert_boolean_light_mode("inverted", BooleanLightMode::Off);
-    }
-
     fn assert_red_amber_green_light_mode(input: &str, red_amber_green: RedAmberGreenLightMode) {
         let expected = LightMode::new(BooleanLightMode::Off, red_amber_green);
         assert_eq!(
-            light_mode_from_config_values(&(CONFIG_BOOLEAN_OFF.to_string(), String::from(input))),
+            light_mode_from_config_values(&(BooleanLightMode::Off, String::from(input))),
             expected
         );
     }
