@@ -171,15 +171,14 @@ enum Light {
 pub enum BooleanLightMode {
     Off,
     On,
-    #[serde(rename = "flash")]
-    Flashing,
+    Flash,
 }
 
 impl BooleanLightMode {
     /// Returns true if the mode requires animation, i.e. changes over time.
     fn is_animated(&self) -> bool {
         match self {
-            Self::Flashing => true,
+            Self::Flash => true,
             _ => false,
         }
     }
@@ -193,15 +192,14 @@ pub enum RedAmberGreenLightMode {
     Red,
     Amber,
     Green,
-    #[serde(rename = "red-amber")]
-    FlashingRedAmber,
+    RedAmber,
 }
 
 impl RedAmberGreenLightMode {
     /// Returns true if the mode requires animation, i.e. changes over time.
     fn is_animated(&self) -> bool {
         match self {
-            RedAmberGreenLightMode::FlashingRedAmber => true,
+            RedAmberGreenLightMode::RedAmber => true,
             _ => false,
         }
     }

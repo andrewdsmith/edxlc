@@ -86,7 +86,7 @@ fn boolean_state_for_mode(light_mode: &BooleanLightMode, milliseconds: u128) -> 
     match light_mode {
         BooleanLightMode::Off => BooleanLightState::Off,
         BooleanLightMode::On => BooleanLightState::On,
-        BooleanLightMode::Flashing => {
+        BooleanLightMode::Flash => {
             animated_state(milliseconds, BooleanLightState::On, BooleanLightState::Off)
         }
     }
@@ -103,7 +103,7 @@ fn red_amber_green_state_for_mode(
         RedAmberGreenLightMode::Red => RedAmberGreenLightState::Red,
         RedAmberGreenLightMode::Amber => RedAmberGreenLightState::Amber,
         RedAmberGreenLightMode::Green => RedAmberGreenLightState::Green,
-        RedAmberGreenLightMode::FlashingRedAmber => animated_state(
+        RedAmberGreenLightMode::RedAmber => animated_state(
             milliseconds,
             RedAmberGreenLightState::Red,
             RedAmberGreenLightState::Amber,
@@ -143,7 +143,7 @@ mod tests {
 
         assert_boolean_mapping(BooleanLightMode::Off, Off, Off);
         assert_boolean_mapping(BooleanLightMode::On, On, On);
-        assert_boolean_mapping(BooleanLightMode::Flashing, On, Off);
+        assert_boolean_mapping(BooleanLightMode::Flash, On, Off);
     }
 
     fn assert_rag_mapping(
@@ -166,6 +166,6 @@ mod tests {
         assert_rag_mapping(RedAmberGreenLightMode::Red, Red, Red);
         assert_rag_mapping(RedAmberGreenLightMode::Amber, Amber, Amber);
         assert_rag_mapping(RedAmberGreenLightMode::Green, Green, Green);
-        assert_rag_mapping(RedAmberGreenLightMode::FlashingRedAmber, Red, Amber);
+        assert_rag_mapping(RedAmberGreenLightMode::RedAmber, Red, Amber);
     }
 }

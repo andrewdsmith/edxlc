@@ -82,19 +82,13 @@ pub fn write_default_file_if_missing() {
             inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Green),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
-            alert: (
-                BooleanLightMode::Flashing,
-                RedAmberGreenLightMode::FlashingRedAmber,
-            ),
+            alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
         },
         hardpoints_deployed: ModeConfig {
             inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
-            alert: (
-                BooleanLightMode::Flashing,
-                RedAmberGreenLightMode::FlashingRedAmber,
-            ),
+            alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
         },
     };
 
@@ -125,19 +119,13 @@ mod tests {
                 inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Green),
                 active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
                 blocked: (BooleanLightMode::On, RedAmberGreenLightMode::Red),
-                alert: (
-                    BooleanLightMode::Flashing,
-                    RedAmberGreenLightMode::FlashingRedAmber,
-                ),
+                alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
             },
             hardpoints_deployed: ModeConfig {
                 inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
                 active: (BooleanLightMode::Off, RedAmberGreenLightMode::Amber),
-                blocked: (BooleanLightMode::Flashing, RedAmberGreenLightMode::Red),
-                alert: (
-                    BooleanLightMode::Off,
-                    RedAmberGreenLightMode::FlashingRedAmber,
-                ),
+                blocked: (BooleanLightMode::Flash, RedAmberGreenLightMode::Red),
+                alert: (BooleanLightMode::Off, RedAmberGreenLightMode::RedAmber),
             },
         };
 
