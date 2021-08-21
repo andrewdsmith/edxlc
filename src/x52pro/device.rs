@@ -4,27 +4,31 @@ use enum_iterator::IntoEnumIterator;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-// These constants could be converted to an enum.
-const LED_CLUTCH_RED: u32 = 17;
-const LED_CLUTCH_GREEN: u32 = 18;
-const LED_FIRE: u32 = 0;
-const LED_FIRE_A_RED: u32 = 1;
-const LED_FIRE_A_GREEN: u32 = 2;
-const LED_FIRE_B_RED: u32 = 3;
-const LED_FIRE_B_GREEN: u32 = 4;
-const LED_FIRE_D_RED: u32 = 5;
-const LED_FIRE_D_GREEN: u32 = 6;
-const LED_FIRE_E_RED: u32 = 7;
-const LED_FIRE_E_GREEN: u32 = 8;
-const LED_POV_2_RED: u32 = 15;
-const LED_POV_2_GREEN: u32 = 16;
-const LED_T1T2_RED: u32 = 9;
-const LED_T1T2_GREEN: u32 = 10;
-const LED_T3T4_RED: u32 = 11;
-const LED_T3T4_GREEN: u32 = 12;
-const LED_T5T6_RED: u32 = 13;
-const LED_T5T6_GREEN: u32 = 14;
-const LED_THROTTLE: u32 = 19;
+/// Controllable LEDs on the device. Assigned values correspond to the ids used
+/// by DirectOutput.
+#[derive(Copy, Clone)]
+pub enum Led {
+    Fire = 0,
+    FireARed = 1,
+    FireAGreen = 2,
+    FireBRed = 3,
+    FireBGreen = 4,
+    FireDRed = 5,
+    FireDGreen = 6,
+    FireERed = 7,
+    FireEGreen = 8,
+    T1T2Red = 9,
+    T1T2Green = 10,
+    T3T4Red = 11,
+    T3T4Green = 12,
+    T5T6Red = 13,
+    T5T6Green = 14,
+    PoV2Red = 15,
+    PoV2Green = 16,
+    ClutchRed = 17,
+    ClutchGreen = 18,
+    Throttle = 19,
+}
 
 /// An instance of an interface to a Saitek X52 Pro Flight HOTAS flight
 /// controller device.
@@ -48,44 +52,44 @@ impl Device {
 
         lights.insert(
             Light::Clutch,
-            Box::new(RedGreenLightMapping::new(LED_CLUTCH_RED, LED_CLUTCH_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::ClutchRed, Led::ClutchGreen)),
         );
-        lights.insert(Light::Fire, Box::new(BinaryLightMapping::new(LED_FIRE)));
+        lights.insert(Light::Fire, Box::new(BinaryLightMapping::new(Led::Fire)));
         lights.insert(
             Light::FireA,
-            Box::new(RedGreenLightMapping::new(LED_FIRE_A_RED, LED_FIRE_A_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::FireARed, Led::FireAGreen)),
         );
         lights.insert(
             Light::FireB,
-            Box::new(RedGreenLightMapping::new(LED_FIRE_B_RED, LED_FIRE_B_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::FireBRed, Led::FireBGreen)),
         );
         lights.insert(
             Light::FireD,
-            Box::new(RedGreenLightMapping::new(LED_FIRE_D_RED, LED_FIRE_D_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::FireDRed, Led::FireDGreen)),
         );
         lights.insert(
             Light::FireE,
-            Box::new(RedGreenLightMapping::new(LED_FIRE_E_RED, LED_FIRE_E_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::FireERed, Led::FireEGreen)),
         );
         lights.insert(
             Light::PoV2,
-            Box::new(RedGreenLightMapping::new(LED_POV_2_RED, LED_POV_2_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::PoV2Red, Led::PoV2Green)),
         );
         lights.insert(
             Light::T1T2,
-            Box::new(RedGreenLightMapping::new(LED_T1T2_RED, LED_T1T2_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::T1T2Red, Led::T1T2Green)),
         );
         lights.insert(
             Light::T3T4,
-            Box::new(RedGreenLightMapping::new(LED_T3T4_RED, LED_T3T4_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::T3T4Red, Led::T3T4Green)),
         );
         lights.insert(
             Light::T5T6,
-            Box::new(RedGreenLightMapping::new(LED_T5T6_RED, LED_T5T6_GREEN)),
+            Box::new(RedGreenLightMapping::new(Led::T5T6Red, Led::T5T6Green)),
         );
         lights.insert(
             Light::Throttle,
-            Box::new(BinaryLightMapping::new(LED_THROTTLE)),
+            Box::new(BinaryLightMapping::new(Led::Throttle)),
         );
 
         Device {
@@ -171,7 +175,7 @@ pub enum Input {
     T6,
 }
 
-/// Controllable lights on the device.
+/// Controllable lights on the device, which have either one or two LEDs.
 #[derive(Copy, Clone, Debug, Eq, Hash, IntoEnumIterator, PartialEq)]
 enum Light {
     Clutch,
@@ -261,12 +265,12 @@ trait LightMapping {
 
 /// The mapping of a light to a single device LED.
 struct BinaryLightMapping {
-    led_id: u32,
+    led_id: Led,
     light_mode: BooleanLightMode,
 }
 
 impl BinaryLightMapping {
-    fn new(led_id: u32) -> Self {
+    fn new(led_id: Led) -> Self {
         Self {
             led_id,
             light_mode: BooleanLightMode::Off,
@@ -298,13 +302,13 @@ impl LightMapping for BinaryLightMapping {
 
 /// The mapping of a light to a red-green pair of device LEDs.
 struct RedGreenLightMapping {
-    red_led_id: u32,
-    green_led_id: u32,
+    red_led_id: Led,
+    green_led_id: Led,
     light_mode: RedAmberGreenLightMode,
 }
 
 impl RedGreenLightMapping {
-    fn new(red_led_id: u32, green_led_id: u32) -> Self {
+    fn new(red_led_id: Led, green_led_id: Led) -> Self {
         Self {
             red_led_id,
             green_led_id,
