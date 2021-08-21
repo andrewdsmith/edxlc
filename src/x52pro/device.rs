@@ -4,6 +4,7 @@ use enum_iterator::IntoEnumIterator;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+// These constants could be converted to an enum.
 const LED_CLUTCH_RED: u32 = 17;
 const LED_CLUTCH_GREEN: u32 = 18;
 const LED_FIRE: u32 = 0;
@@ -15,6 +16,8 @@ const LED_FIRE_D_RED: u32 = 5;
 const LED_FIRE_D_GREEN: u32 = 6;
 const LED_FIRE_E_RED: u32 = 7;
 const LED_FIRE_E_GREEN: u32 = 8;
+const LED_POV_2_RED: u32 = 15;
+const LED_POV_2_GREEN: u32 = 16;
 const LED_T1T2_RED: u32 = 9;
 const LED_T1T2_GREEN: u32 = 10;
 const LED_T3T4_RED: u32 = 11;
@@ -62,6 +65,10 @@ impl Device {
         lights.insert(
             Light::FireE,
             Box::new(RedGreenLightMapping::new(LED_FIRE_E_RED, LED_FIRE_E_GREEN)),
+        );
+        lights.insert(
+            Light::PoV2,
+            Box::new(RedGreenLightMapping::new(LED_POV_2_RED, LED_POV_2_GREEN)),
         );
         lights.insert(
             Light::T1T2,
@@ -168,6 +175,7 @@ enum Light {
     FireB,
     FireD,
     FireE,
+    PoV2,
     T1T2,
     T3T4,
     T5T6,
