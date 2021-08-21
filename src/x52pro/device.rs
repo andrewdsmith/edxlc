@@ -24,6 +24,7 @@ const LED_T3T4_RED: u32 = 11;
 const LED_T3T4_GREEN: u32 = 12;
 const LED_T5T6_RED: u32 = 13;
 const LED_T5T6_GREEN: u32 = 14;
+const LED_THROTTLE: u32 = 19;
 
 /// An instance of an interface to a Saitek X52 Pro Flight HOTAS flight
 /// controller device.
@@ -81,6 +82,10 @@ impl Device {
         lights.insert(
             Light::T5T6,
             Box::new(RedGreenLightMapping::new(LED_T5T6_RED, LED_T5T6_GREEN)),
+        );
+        lights.insert(
+            Light::Throttle,
+            Box::new(BinaryLightMapping::new(LED_THROTTLE)),
         );
 
         Device {
@@ -179,6 +184,7 @@ enum Light {
     T1T2,
     T3T4,
     T5T6,
+    Throttle,
 }
 
 /// Available modes for boolean lights on the device.
