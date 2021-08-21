@@ -1,5 +1,6 @@
 use crate::game::StatusLevel;
 use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper, StatusLevelToModeMapper};
+use enum_iterator::IntoEnumIterator;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -91,21 +92,28 @@ impl Device {
         input_status_levels: Vec<(Input, StatusLevel)>,
         status_level_to_mode_mapper: &StatusLevelToModeMapper,
     ) {
-        // Build a hash of the highest status level keyed by light.
+        // A hash mapping every light to the highest status level encountered.
+        // This creation could be moved into `new`.
         let mut light_highest_status_levels = HashMap::new();
 
+        // Default all lights to inactive.
+        for light in Light::into_enum_iter() {
+            light_highest_status_levels.insert(light, StatusLevel::Inactive);
+        }
+
+        // Map given inputs to corresponding light and update the hash if the
+        // status level is higher. It should be entirely safe to call `unwrap`
+        // as we know we have an entry in the hash for every light.
         for (input, status_level) in input_status_levels {
             let light = light_for_input(input);
-            let light_status_level = light_highest_status_levels
-                .entry(light)
-                .or_insert(StatusLevel::Inactive);
+            let light_status_level = light_highest_status_levels.get_mut(&light).unwrap();
 
-            // Replace this with `and_modify` above?
             if status_level > *light_status_level {
                 *light_status_level = status_level.clone();
             }
         }
 
+        // Update the list of lights that are in a mode that requires animation.
         self.animated_lights.clear();
 
         for (light, status_level) in &light_highest_status_levels {
@@ -152,7 +160,7 @@ pub enum Input {
 }
 
 /// Controllable lights on the device.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, IntoEnumIterator, PartialEq)]
 enum Light {
     Clutch,
     Fire,

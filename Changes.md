@@ -1,5 +1,11 @@
 # Changes
 
+## Version 1.9
+
+- Sets all supported lights to the inactive state even if the are not mapped to
+  recognised controls; this is most noticable when hardpoints are deployed using
+  the default configuration
+
 ## Version 1.8
 
 - Supports alternative configuration when hardpoints are deployed
