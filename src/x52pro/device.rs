@@ -167,6 +167,10 @@ pub enum Input {
     FireB,
     FireD,
     FireE,
+    PoV2Down,
+    PoV2Left,
+    PoV2Right,
+    PoV2Up,
     T1,
     T2,
     T3,
@@ -350,6 +354,10 @@ fn light_for_input(input: Input) -> Light {
         Input::FireB => Light::FireB,
         Input::FireD => Light::FireD,
         Input::FireE => Light::FireE,
+        Input::PoV2Down => Light::PoV2,
+        Input::PoV2Left => Light::PoV2,
+        Input::PoV2Right => Light::PoV2,
+        Input::PoV2Up => Light::PoV2,
         Input::T1 => Light::T1T2,
         Input::T2 => Light::T1T2,
         Input::T3 => Light::T3T4,
@@ -371,6 +379,10 @@ mod tests {
         assert_light_for_input(Input::FireB, Light::FireB);
         assert_light_for_input(Input::FireD, Light::FireD);
         assert_light_for_input(Input::FireE, Light::FireE);
+        assert_light_for_input(Input::PoV2Up, Light::PoV2);
+        assert_light_for_input(Input::PoV2Down, Light::PoV2);
+        assert_light_for_input(Input::PoV2Left, Light::PoV2);
+        assert_light_for_input(Input::PoV2Right, Light::PoV2);
         assert_light_for_input(Input::T1, Light::T1T2);
         assert_light_for_input(Input::T2, Light::T1T2);
         assert_light_for_input(Input::T3, Light::T3T4);

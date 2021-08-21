@@ -9,6 +9,10 @@ const X52PRO_FIRE_A: &str = "Joy_3";
 const X52PRO_FIRE_B: &str = "Joy_4";
 const X52PRO_FIRE_D: &str = "Joy_7";
 const X52PRO_FIRE_E: &str = "Joy_8";
+const X52PRO_POV2_DOWN: &str = "Joy_22";
+const X52PRO_POV2_LEFT: &str = "Joy_23";
+const X52PRO_POV2_RIGHT: &str = "Joy_21";
+const X52PRO_POV2_UP: &str = "Joy_20";
 const X52PRO_T1: &str = "Joy_9";
 const X52PRO_T2: &str = "Joy_10";
 const X52PRO_T3: &str = "Joy_11";
@@ -89,6 +93,10 @@ fn input_from_file_input(input: &BindingsInput) -> Option<Input> {
             X52PRO_FIRE_B => Some(Input::FireB),
             X52PRO_FIRE_D => Some(Input::FireD),
             X52PRO_FIRE_E => Some(Input::FireE),
+            X52PRO_POV2_DOWN => Some(Input::PoV2Down),
+            X52PRO_POV2_LEFT => Some(Input::PoV2Left),
+            X52PRO_POV2_RIGHT => Some(Input::PoV2Right),
+            X52PRO_POV2_UP => Some(Input::PoV2Up),
             X52PRO_T1 => Some(Input::T1),
             X52PRO_T2 => Some(Input::T2),
             X52PRO_T3 => Some(Input::T3),
@@ -178,6 +186,22 @@ mod tests {
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_B), Some(Input::FireB));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_D), Some(Input::FireD));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_FIRE_E), Some(Input::FireE));
+        assert_eq!(
+            call_with(X52PRO_DEVICE, X52PRO_POV2_DOWN),
+            Some(Input::PoV2Down)
+        );
+        assert_eq!(
+            call_with(X52PRO_DEVICE, X52PRO_POV2_LEFT),
+            Some(Input::PoV2Left)
+        );
+        assert_eq!(
+            call_with(X52PRO_DEVICE, X52PRO_POV2_RIGHT),
+            Some(Input::PoV2Right)
+        );
+        assert_eq!(
+            call_with(X52PRO_DEVICE, X52PRO_POV2_UP),
+            Some(Input::PoV2Up)
+        );
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T1), Some(Input::T1));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T2), Some(Input::T2));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T3), Some(Input::T3));
