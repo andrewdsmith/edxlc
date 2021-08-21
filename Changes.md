@@ -2,9 +2,11 @@
 
 ## Version 1.9
 
-- Sets all supported lights to the inactive state even if the are not mapped to
-  recognised controls; this is most noticable when hardpoints are deployed using
-  the default configuration
+- Sets all lights to the inactive state even if the are not mapped to recognised
+  controls; this is noticable for example when hardpoints are deployed using the
+  default configuration
+- Keep boolean lights on when inactive by default as this gives a better
+  experience with both the Fire button and the throttle
 
 ## Version 1.8
 
