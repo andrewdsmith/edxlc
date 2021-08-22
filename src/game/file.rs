@@ -75,3 +75,21 @@ impl Status {
         serde_json::from_str(&json).expect("Could not parse status JSON")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_from_json_parses_flags() {
+        let json = String::from(
+            r#"{
+                "timestamp": "2021-08-21T21:36:35Z",
+                "event": "Status",
+                "Flags": 4
+            }"#,
+        );
+
+        assert_eq!(Status::from_json(json), Status { flags: 4 });
+    }
+}
