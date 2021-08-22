@@ -177,6 +177,7 @@ pub enum Input {
     T4,
     T5,
     T6,
+    ZAxis,
 }
 
 /// Controllable lights on the device, which have either one or two LEDs.
@@ -364,6 +365,7 @@ fn light_for_input(input: Input) -> Light {
         Input::T4 => Light::T3T4,
         Input::T5 => Light::T5T6,
         Input::T6 => Light::T5T6,
+        Input::ZAxis => Light::Throttle,
     }
 }
 
@@ -389,6 +391,7 @@ mod tests {
         assert_light_for_input(Input::T4, Light::T3T4);
         assert_light_for_input(Input::T5, Light::T5T6);
         assert_light_for_input(Input::T6, Light::T5T6);
+        assert_light_for_input(Input::ZAxis, Light::Throttle);
     }
 
     fn assert_light_for_input(input: Input, light: Light) {

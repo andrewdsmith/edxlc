@@ -19,6 +19,7 @@ const X52PRO_T3: &str = "Joy_11";
 const X52PRO_T4: &str = "Joy_12";
 const X52PRO_T5: &str = "Joy_13";
 const X52PRO_T6: &str = "Joy_14";
+const X52PRO_Z_AXIS: &str = "Joy_ZAxis";
 
 /// A supported game control that can be mapped to an X52Pro input.
 pub enum Control {
@@ -103,6 +104,7 @@ fn input_from_file_input(input: &BindingsInput) -> Option<Input> {
             X52PRO_T4 => Some(Input::T4),
             X52PRO_T5 => Some(Input::T5),
             X52PRO_T6 => Some(Input::T6),
+            X52PRO_Z_AXIS => Some(Input::ZAxis),
             _ => None,
         },
         _ => None,
@@ -208,6 +210,7 @@ mod tests {
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T4), Some(Input::T4));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T5), Some(Input::T5));
         assert_eq!(call_with(X52PRO_DEVICE, X52PRO_T6), Some(Input::T6));
+        assert_eq!(call_with(X52PRO_DEVICE, X52PRO_Z_AXIS), Some(Input::ZAxis));
         assert_eq!(call_with(X52PRO_DEVICE, "Other"), None);
         assert_eq!(call_with("Other", X52PRO_T2), None);
     }
