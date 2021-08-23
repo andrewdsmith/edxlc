@@ -3,6 +3,7 @@
 ## Version 1.9
 
 - Supports controls bound to the POV2 hat and throttle
+- Shows alert on throttle control when speeding
 - Sets all lights to the inactive state even if the are not mapped to recognised
   controls; this is noticable for example when hardpoints are deployed using the
   default configuration

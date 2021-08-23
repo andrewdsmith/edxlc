@@ -33,6 +33,7 @@ pub enum Control {
     LandingGear,
     SilentRunning,
     Supercruise,
+    Throttle,
 }
 
 /// The set of game controls bound to X52Pro inputs as loaded from a bindings
@@ -68,13 +69,18 @@ impl Controls {
             Control::LandingGear => &self.file.landing_gear,
             Control::SilentRunning => &self.file.silent_running,
             Control::Supercruise => &self.file.supercruise,
+            Control::Throttle => &self.file.throttle,
         };
 
         let mut inputs = Vec::with_capacity(2);
 
         // This could probably be more elegantly written by mapping the vector
         // elements through the function and collecting the non-None elements.
-        for file_input in vec![&control_binding.primary, &control_binding.secondary] {
+        for file_input in vec![
+            &control_binding.primary,
+            &control_binding.secondary,
+            &control_binding.binding,
+        ] {
             if let Some(input) = input_from_file_input(file_input) {
                 inputs.push(input);
             }
@@ -132,6 +138,7 @@ mod tests {
             heat_sink: ControlBinding::new((X52PRO_DEVICE, X52PRO_T6), ("", "")),
             hardpoints: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_B), ("", "")),
             boost: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_D), ("", "")),
+            throttle: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_E), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
 

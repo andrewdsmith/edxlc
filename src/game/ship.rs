@@ -1,4 +1,4 @@
-use super::file::{journal::Event, Status as FileStatus};
+use super::file::{journal::Event, LegalState, Status as FileStatus};
 use log::{info, warn};
 
 type StatusBitField = u64;
@@ -15,8 +15,10 @@ const FRAME_SHIFT_DRIVE_CHARGING: StatusBitField = 1 << 17;
 const FRAME_SHIFT_DRIVE_COOLDOWN: StatusBitField = 1 << 18;
 const OVERHEATING: StatusBitField = 1 << 20;
 
-// These statuses are derived from journal events and use the unused high bits.
+// These statuses are derived from sources other than the flag fields (e.g.
+// legal status and journal events) so we pack them into the unused high bits.
 const DOCKING: StatusBitField = 1 << (32 + 16);
+const SPEEDING: StatusBitField = 1 << (32 + 17);
 
 const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | CARGO_SCOOP_DEPLOYED
@@ -27,7 +29,8 @@ const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | OVERHEATING
     | SILENT_RUNNING
     | HARDPOINTS_DEPLOYED
-    | SUPERCRUISE;
+    | SUPERCRUISE
+    | SPEEDING;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(Clone, Copy, PartialEq)]
@@ -40,6 +43,7 @@ pub enum Attribute {
     HeatSink,
     LandingGear,
     SilentRunning,
+    Throttle,
 }
 
 /// An association of a `Attribute` to a `StatusLevel` value for a `Ship`.
@@ -207,6 +211,13 @@ impl Ship {
                         StatusLevel::Blocked,
                     )],
                 ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::Throttle,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(SPEEDING),
+                        StatusLevel::Alert,
+                    )],
+                ),
             ],
         }
     }
@@ -227,11 +238,21 @@ impl Ship {
     }
 
     pub fn update_status(&mut self, status: FileStatus) -> bool {
-        let updated_status_flags = Self::filtered_status_flags(status.flags as u64);
+        // Flatten non-flag statuses into the bit-field.
+        let incoming_status_flags = status.flags as u64
+            | if status.legal_state == LegalState::Speeding {
+                SPEEDING
+            } else {
+                0
+            };
+
+        let updated_status_flags = Self::filtered_status_flags(incoming_status_flags);
 
         if Self::filtered_status_flags(self.status_flags) == updated_status_flags {
             false
         } else {
+            // Reinstate derived status flags that were filtered out (and
+            // necessarily can't have triggered a status change).
             self.status_flags = updated_status_flags | (self.status_flags & DOCKING);
             true
         }
@@ -320,7 +341,10 @@ mod tests {
     fn ship_update_status_sets_statuses() {
         for flag in statuses() {
             let mut ship = Ship::new();
-            ship.update_status(FileStatus { flags: flag as u32 });
+            ship.update_status(FileStatus {
+                flags: flag as u32,
+                legal_state: LegalState::Other,
+            });
             assert_eq!(ship.all_status_flags_set(flag), true);
         }
     }
@@ -330,7 +354,10 @@ mod tests {
         for flag in statuses() {
             let mut ship = Ship::new();
             ship.set_status(flag);
-            ship.update_status(FileStatus { flags: 0 });
+            ship.update_status(FileStatus {
+                flags: 0,
+                legal_state: LegalState::Other,
+            });
             assert_eq!(ship.all_status_flags_set(flag), false);
         }
     }
@@ -339,8 +366,20 @@ mod tests {
     fn ship_update_status_returns_true_on_change() {
         for flag in statuses() {
             let mut ship = Ship::new();
-            assert_eq!(ship.update_status(FileStatus { flags: flag as u32 }), true);
-            assert_eq!(ship.update_status(FileStatus { flags: flag as u32 }), false);
+            assert_eq!(
+                ship.update_status(FileStatus {
+                    flags: flag as u32,
+                    legal_state: LegalState::Other,
+                }),
+                true
+            );
+            assert_eq!(
+                ship.update_status(FileStatus {
+                    flags: flag as u32,
+                    legal_state: LegalState::Other,
+                }),
+                false
+            );
         }
     }
 
@@ -350,6 +389,7 @@ mod tests {
         ship.set_status(DOCKING);
         ship.update_status(FileStatus {
             flags: LANDING_GEAR_DEPLOYED as u32,
+            legal_state: LegalState::Other,
         });
         assert_eq!(ship.all_status_flags_set(DOCKING), true);
     }
@@ -364,6 +404,56 @@ mod tests {
             .expect("Statuses did not include expected attribute");
 
         assert_eq!(status.level, level);
+    }
+
+    #[test]
+    fn ship_update_status_sets_speeding() {
+        let mut ship = Ship::new();
+        ship.update_status(FileStatus {
+            flags: 0,
+            legal_state: LegalState::Speeding,
+        });
+        assert_eq!(ship.all_status_flags_set(SPEEDING), true);
+    }
+
+    #[test]
+    fn ship_update_status_clears_speeding() {
+        let mut ship = Ship::new();
+        ship.update_status(FileStatus {
+            flags: 0,
+            legal_state: LegalState::Other,
+        });
+        assert_eq!(ship.all_status_flags_set(SPEEDING), false);
+    }
+
+    #[test]
+    fn ship_update_speeding_returns_true_on_change() {
+        let mut ship = Ship::new();
+        assert_eq!(
+            ship.update_status(FileStatus {
+                flags: 0,
+                legal_state: LegalState::Speeding,
+            }),
+            true
+        );
+        assert_eq!(
+            ship.update_status(FileStatus {
+                flags: 0,
+                legal_state: LegalState::Speeding,
+            }),
+            false
+        );
+    }
+
+    #[test]
+    fn ship_update_status_speeding_does_not_clobber_derived_states() {
+        let mut ship = Ship::new();
+        ship.set_status(DOCKING);
+        ship.update_status(FileStatus {
+            flags: 0,
+            legal_state: LegalState::Speeding,
+        });
+        assert_eq!(ship.all_status_flags_set(DOCKING), true);
     }
 
     #[test]
@@ -389,6 +479,11 @@ mod tests {
     #[test]
     fn zero_state_maps_to_silent_running_inactive() {
         assert_status(0, Attribute::SilentRunning, StatusLevel::Inactive);
+    }
+
+    #[test]
+    fn zero_state_maps_to_throttle_inactive() {
+        assert_status(0, Attribute::Throttle, StatusLevel::Inactive);
     }
 
     #[test]
@@ -534,6 +629,11 @@ mod tests {
             Attribute::SilentRunning,
             StatusLevel::Alert,
         );
+    }
+
+    #[test]
+    fn speeding_maps_to_throttle_alert() {
+        assert_status(SPEEDING, Attribute::Throttle, StatusLevel::Alert);
     }
 
     #[test]

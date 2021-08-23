@@ -49,10 +49,13 @@ pub fn status_file_path() -> PathBuf {
         .join(r#"Saved Games\Frontier Developments\Elite Dangerous\Status.json"#)
 }
 
-#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Default, Deserialize, Eq, PartialEq)]
+#[serde(default)]
 pub struct Status {
     #[serde(rename = "Flags")]
     pub flags: u32,
+    #[serde(rename = "LegalState")]
+    pub legal_state: LegalState,
 }
 
 impl Status {
@@ -76,6 +79,19 @@ impl Status {
     }
 }
 
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub enum LegalState {
+    Speeding,
+    #[serde(other)]
+    Other,
+}
+
+impl Default for LegalState {
+    fn default() -> Self {
+        LegalState::Other
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,13 +99,22 @@ mod tests {
     #[test]
     fn status_from_json_parses_flags() {
         let json = String::from(
-            r#"{
-                "timestamp": "2021-08-21T21:36:35Z",
-                "event": "Status",
-                "Flags": 4
-            }"#,
+            r#"{"timestamp": "2021-08-21T21:36:35Z", "event": "Status", "Flags": 4, "LegalState": "Speeding"}"#,
         );
 
-        assert_eq!(Status::from_json(json), Status { flags: 4 });
+        assert_eq!(
+            Status::from_json(json),
+            Status {
+                flags: 4,
+                legal_state: LegalState::Speeding
+            }
+        );
+    }
+
+    #[test]
+    fn status_from_json_parses_when_legal_state_missing() {
+        let json =
+            String::from(r#"{"timestamp": "2021-08-21T21:36:35Z", "event": "Status", "Flags": 0}"#);
+        assert_eq!(Status::from_json(json).legal_state, LegalState::Other);
     }
 }

@@ -27,6 +27,8 @@ pub struct ControlBindings {
     pub silent_running: ControlBinding,
     #[serde(rename = "DeployHeatSink")]
     pub heat_sink: ControlBinding,
+    #[serde(rename = "ThrottleAxis")]
+    pub throttle: ControlBinding,
 }
 
 impl ControlBindings {
@@ -42,12 +44,15 @@ impl ControlBindings {
 
 /// A pair of device inputs that can be mapped to a game control, as stored in
 /// the game binding files.
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Default, Deserialize, Debug, PartialEq)]
+#[serde(default)]
 pub struct ControlBinding {
     #[serde(rename = "Primary")]
     pub primary: Input,
     #[serde(rename = "Secondary")]
     pub secondary: Input,
+    #[serde(rename = "Binding")]
+    pub binding: Input,
 }
 
 impl ControlBinding {
@@ -56,12 +61,13 @@ impl ControlBinding {
         Self {
             primary: Input::new(primary.0, primary.1),
             secondary: Input::new(secondary.0, secondary.1),
+            ..Default::default()
         }
     }
 }
 
 /// A device input as stored in the game binding files.
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Default, Deserialize, Debug, PartialEq)]
 pub struct Input {
     #[serde(rename = "Device")]
     pub device: String,
@@ -128,6 +134,9 @@ mod tests {
                     <Primary Device="D15" Key="K15" />
                     <Secondary Device="D16" Key="K16" />
                 </DeployHeatSink>
+                <ThrottleAxis>
+                    <Binding Device="D21" Key="K21" />
+                </ThrottleAxis>
             </Root>
             "#,
         );
@@ -143,6 +152,13 @@ mod tests {
             heat_sink: ControlBinding::new(("D15", "K15"), ("D16", "K16")),
             hardpoints: ControlBinding::new(("D17", "K17"), ("D18", "K18")),
             boost: ControlBinding::new(("D19", "K19"), ("D20", "K20")),
+            throttle: ControlBinding {
+                binding: Input {
+                    device: String::from("D21"),
+                    name: String::from("K21"),
+                },
+                ..Default::default()
+            },
         };
 
         assert_eq!(ControlBindings::from_str(xml), expected);
