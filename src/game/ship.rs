@@ -282,7 +282,11 @@ impl Ship {
 
     /// Returns the current global (highest precendence) status for the ship.
     pub fn global_status(&self) -> GlobalStatus {
-        if self.any_status_flags_set(HARDPOINTS_DEPLOYED) {
+        // FSS scans while in supercruise can cause the hardpoint deployed
+        // status to be set but we don't want this to be the global status.
+        if self.any_status_flags_set(SUPERCRUISE) {
+            GlobalStatus::Normal
+        } else if self.any_status_flags_set(HARDPOINTS_DEPLOYED) {
             GlobalStatus::HardpointsDeployed
         } else {
             GlobalStatus::Normal
@@ -660,5 +664,6 @@ mod tests {
     fn global_status_precedence_rules() {
         assert_global_status(0, GlobalStatus::Normal);
         assert_global_status(HARDPOINTS_DEPLOYED, GlobalStatus::HardpointsDeployed);
+        assert_global_status(HARDPOINTS_DEPLOYED | SUPERCRUISE, GlobalStatus::Normal);
     }
 }

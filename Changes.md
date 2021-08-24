@@ -9,6 +9,8 @@
   default configuration
 - Keep boolean lights on when inactive by default as this gives a better
   experience with both the Fire button and the throttle
+- Prevent hardpoints deployed being the global state when in supercruise; this
+  could be triggered previously by using the FSS
 
 ## Version 1.8
 
