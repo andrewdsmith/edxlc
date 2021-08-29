@@ -2,11 +2,12 @@ use crate::game::StatusLevel;
 use crate::x52pro::device::LightMode;
 
 /// Maps status levels to light modes based on the given configuration.
+#[derive(Debug, PartialEq)]
 pub struct StatusLevelToModeMapper {
-    inactive: LightMode,
-    active: LightMode,
-    blocked: LightMode,
-    alert: LightMode,
+    pub inactive: LightMode,
+    pub active: LightMode,
+    pub blocked: LightMode,
+    pub alert: LightMode,
 }
 
 impl StatusLevelToModeMapper {

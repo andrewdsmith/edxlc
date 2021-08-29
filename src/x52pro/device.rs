@@ -238,8 +238,8 @@ impl RedAmberGreenLightMode {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct LightMode {
-    boolean: BooleanLightMode,
-    red_amber_green: RedAmberGreenLightMode,
+    pub boolean: BooleanLightMode,
+    pub red_amber_green: RedAmberGreenLightMode,
 }
 
 impl LightMode {

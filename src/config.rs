@@ -131,4 +131,41 @@ mod tests {
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
     }
+
+    #[test]
+    fn config_status_level_to_mode_mapper_returns_constructed_defaults() {
+        let default_light_config = (BooleanLightMode::On, RedAmberGreenLightMode::Green);
+        let other_light_config = (BooleanLightMode::Off, RedAmberGreenLightMode::Red);
+
+        let default_light_mode = LightMode {
+            boolean: default_light_config.0,
+            red_amber_green: default_light_config.1,
+        };
+
+        let config = Config {
+            default: ModeConfig {
+                inactive: default_light_config,
+                active: default_light_config,
+                blocked: default_light_config,
+                alert: default_light_config,
+            },
+            hardpoints_deployed: ModeConfig {
+                inactive: other_light_config,
+                active: other_light_config,
+                blocked: other_light_config,
+                alert: other_light_config,
+            },
+        };
+
+        let expected_mapper = StatusLevelToModeMapper {
+            inactive: default_light_mode,
+            active: default_light_mode,
+            blocked: default_light_mode,
+            alert: default_light_mode,
+        };
+
+        let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::Normal);
+
+        assert_eq!(actual_mapper, expected_mapper);
+    }
 }
