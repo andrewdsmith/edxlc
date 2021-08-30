@@ -23,7 +23,7 @@ struct ModeConfig {
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
     default: ModeConfig,
-    hardpoints_deployed: ModeConfig,
+    hardpoints_deployed: Option<ModeConfig>,
 }
 
 impl Config {
@@ -49,7 +49,10 @@ impl Config {
     ) -> StatusLevelToModeMapper {
         let mode_config = match global_status {
             GlobalStatus::Normal => &self.default,
-            GlobalStatus::HardpointsDeployed => &self.hardpoints_deployed,
+            GlobalStatus::HardpointsDeployed => match self.hardpoints_deployed {
+                Some(ref foo) => foo,
+                None => &self.default,
+            },
         };
 
         StatusLevelToModeMapper::new(
@@ -84,12 +87,12 @@ pub fn write_default_file_if_missing() {
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
         },
-        hardpoints_deployed: ModeConfig {
+        hardpoints_deployed: Some(ModeConfig {
             inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Red),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
-        },
+        }),
     };
 
     let toml = toml::to_string(&config).expect("Could not serialize default configuration");
@@ -121,12 +124,34 @@ mod tests {
                 blocked: (BooleanLightMode::On, RedAmberGreenLightMode::Red),
                 alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
             },
-            hardpoints_deployed: ModeConfig {
+            hardpoints_deployed: Some(ModeConfig {
                 inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
                 active: (BooleanLightMode::Off, RedAmberGreenLightMode::Amber),
                 blocked: (BooleanLightMode::Flash, RedAmberGreenLightMode::Red),
                 alert: (BooleanLightMode::Off, RedAmberGreenLightMode::RedAmber),
+            }),
+        };
+
+        assert_eq!(Config::from_toml(&String::from(toml)), expected);
+    }
+
+    #[test]
+    fn config_from_toml_returns_an_instance_with_none_for_missing_blocks() {
+        let toml = r#"
+            [default]
+            inactive = ["off", "green"]
+            active = ["on", "amber"]
+            blocked = ["on", "red"]
+            alert = ["flash", "red-amber"]"#;
+
+        let expected = Config {
+            default: ModeConfig {
+                inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Green),
+                active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
+                blocked: (BooleanLightMode::On, RedAmberGreenLightMode::Red),
+                alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
             },
+            hardpoints_deployed: None,
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
@@ -149,14 +174,15 @@ mod tests {
                 blocked: default_light_config,
                 alert: default_light_config,
             },
-            hardpoints_deployed: ModeConfig {
+            hardpoints_deployed: Some(ModeConfig {
                 inactive: other_light_config,
                 active: other_light_config,
                 blocked: other_light_config,
                 alert: other_light_config,
-            },
+            }),
         };
 
+        let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::Normal);
         let expected_mapper = StatusLevelToModeMapper {
             inactive: default_light_mode,
             active: default_light_mode,
@@ -164,7 +190,36 @@ mod tests {
             alert: default_light_mode,
         };
 
-        let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::Normal);
+        assert_eq!(actual_mapper, expected_mapper);
+    }
+    #[test]
+    fn config_status_level_to_mode_mapper_returns_fallbacks() {
+        let default_light_config = (BooleanLightMode::On, RedAmberGreenLightMode::Green);
+
+        let default_light_mode = LightMode {
+            boolean: default_light_config.0,
+            red_amber_green: default_light_config.1,
+        };
+
+        let config_without_hardpoints_deployed = Config {
+            default: ModeConfig {
+                inactive: default_light_config,
+                active: default_light_config,
+                blocked: default_light_config,
+                alert: default_light_config,
+            },
+            hardpoints_deployed: None,
+        };
+
+        let actual_mapper = config_without_hardpoints_deployed
+            .status_level_to_mode_mapper(GlobalStatus::HardpointsDeployed);
+
+        let expected_mapper = StatusLevelToModeMapper {
+            inactive: default_light_mode,
+            active: default_light_mode,
+            blocked: default_light_mode,
+            alert: default_light_mode,
+        };
 
         assert_eq!(actual_mapper, expected_mapper);
     }

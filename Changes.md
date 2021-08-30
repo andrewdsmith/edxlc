@@ -1,5 +1,11 @@
 # Changes
 
+## Version 1.10
+
+- Make alternative hardpoints deployed configuration optional in the
+  configuration file; falls back to default configuration from the file if
+  missing
+
 ## Version 1.9
 
 - Supports controls bound to the POV2 hat and throttle
