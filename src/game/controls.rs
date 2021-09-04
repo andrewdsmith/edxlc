@@ -31,6 +31,7 @@ pub enum Control {
     Hyperspace,
     HyperSuperCombination,
     LandingGear,
+    NightVision,
     SilentRunning,
     Supercruise,
     Throttle,
@@ -67,6 +68,7 @@ impl Controls {
             Control::Hyperspace => &self.file.hyperspace,
             Control::HyperSuperCombination => &self.file.hyper_super_combo,
             Control::LandingGear => &self.file.landing_gear,
+            Control::NightVision => &self.file.night_vision,
             Control::SilentRunning => &self.file.silent_running,
             Control::Supercruise => &self.file.supercruise,
             Control::Throttle => &self.file.throttle,
@@ -139,6 +141,7 @@ mod tests {
             hardpoints: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_B), ("", "")),
             boost: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_D), ("", "")),
             throttle: ControlBinding::new((X52PRO_DEVICE, X52PRO_FIRE_E), ("", "")),
+            night_vision: ControlBinding::new((X52PRO_DEVICE, X52PRO_POV2_DOWN), ("", "")),
         };
         let controls = Controls::from_file_control_bindings(file_control_bindings);
 
@@ -181,6 +184,10 @@ mod tests {
         assert_eq!(
             controls.inputs_for_control(Control::Boost),
             vec![Input::FireD]
+        );
+        assert_eq!(
+            controls.inputs_for_control(Control::NightVision),
+            vec![Input::PoV2Down]
         );
     }
 

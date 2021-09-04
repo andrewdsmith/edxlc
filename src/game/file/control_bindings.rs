@@ -29,6 +29,8 @@ pub struct ControlBindings {
     pub heat_sink: ControlBinding,
     #[serde(rename = "ThrottleAxis")]
     pub throttle: ControlBinding,
+    #[serde(rename = "NightVisionToggle")]
+    pub night_vision: ControlBinding,
 }
 
 impl ControlBindings {
@@ -137,6 +139,10 @@ mod tests {
                 <ThrottleAxis>
                     <Binding Device="D21" Key="K21" />
                 </ThrottleAxis>
+                <NightVisionToggle>
+                    <Primary Device="D22" Key="K22" />
+                    <Secondary Device="D23" Key="K23" />
+                </NightVisionToggle>
             </Root>
             "#,
         );
@@ -159,6 +165,7 @@ mod tests {
                 },
                 ..Default::default()
             },
+            night_vision: ControlBinding::new(("D22", "K22"), ("D23", "K23")),
         };
 
         assert_eq!(ControlBindings::from_str(xml), expected);

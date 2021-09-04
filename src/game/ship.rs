@@ -14,6 +14,7 @@ const MASS_LOCKED: StatusBitField = 1 << 16;
 const FRAME_SHIFT_DRIVE_CHARGING: StatusBitField = 1 << 17;
 const FRAME_SHIFT_DRIVE_COOLDOWN: StatusBitField = 1 << 18;
 const OVERHEATING: StatusBitField = 1 << 20;
+const NIGHT_VISION_ON: StatusBitField = 1 << 28;
 
 // These statuses are derived from sources other than the flag fields (e.g.
 // legal status and journal events) so we pack them into the unused high bits.
@@ -30,7 +31,8 @@ const STATUS_FILTER: StatusBitField = LANDING_GEAR_DEPLOYED
     | SILENT_RUNNING
     | HARDPOINTS_DEPLOYED
     | SUPERCRUISE
-    | SPEEDING;
+    | SPEEDING
+    | NIGHT_VISION_ON;
 
 /// An attribute of a `Ship` that can be associated with a value.
 #[derive(Clone, Copy, PartialEq)]
@@ -42,6 +44,7 @@ pub enum Attribute {
     Hardpoints,
     HeatSink,
     LandingGear,
+    NightVision,
     SilentRunning,
     Throttle,
 }
@@ -218,6 +221,13 @@ impl Ship {
                         StatusLevel::Alert,
                     )],
                 ),
+                AttributeStatusLevelMappings::new(
+                    Attribute::NightVision,
+                    vec![ConditionStatusLevelMapping::new(
+                        Condition::All(NIGHT_VISION_ON),
+                        StatusLevel::Active,
+                    )],
+                ),
             ],
         }
     }
@@ -338,6 +348,7 @@ mod tests {
             OVERHEATING,
             HARDPOINTS_DEPLOYED,
             SUPERCRUISE,
+            NIGHT_VISION_ON,
         ]
     }
 
@@ -481,6 +492,11 @@ mod tests {
     }
 
     #[test]
+    fn zero_state_maps_to_night_vision_inactive() {
+        assert_status(0, Attribute::NightVision, StatusLevel::Inactive);
+    }
+
+    #[test]
     fn zero_state_maps_to_silent_running_inactive() {
         assert_status(0, Attribute::SilentRunning, StatusLevel::Inactive);
     }
@@ -611,6 +627,11 @@ mod tests {
             Attribute::FrameShiftDrive,
             StatusLevel::Blocked,
         );
+    }
+
+    #[test]
+    fn night_vision_on_maps_to_night_vision_active() {
+        assert_status(NIGHT_VISION_ON, Attribute::NightVision, StatusLevel::Active);
     }
 
     #[test]
