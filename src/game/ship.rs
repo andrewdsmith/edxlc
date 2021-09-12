@@ -110,6 +110,7 @@ impl AttributeStatusLevelMappings {
 pub enum GlobalStatus {
     Normal,
     HardpointsDeployed,
+    NightVisionOn,
 }
 
 pub struct Ship {
@@ -292,9 +293,11 @@ impl Ship {
 
     /// Returns the current global (highest precendence) status for the ship.
     pub fn global_status(&self) -> GlobalStatus {
-        // FSS scans while in supercruise can cause the hardpoint deployed
-        // status to be set but we don't want this to be the global status.
-        if self.any_status_flags_set(SUPERCRUISE) {
+        if self.any_status_flags_set(NIGHT_VISION_ON) {
+            GlobalStatus::NightVisionOn
+        } else if self.any_status_flags_set(SUPERCRUISE) {
+            // FSS scans while in supercruise can cause the hardpoint deployed
+            // status to be set but we don't want this to be the global status.
             GlobalStatus::Normal
         } else if self.any_status_flags_set(HARDPOINTS_DEPLOYED) {
             GlobalStatus::HardpointsDeployed
@@ -686,5 +689,6 @@ mod tests {
         assert_global_status(0, GlobalStatus::Normal);
         assert_global_status(HARDPOINTS_DEPLOYED, GlobalStatus::HardpointsDeployed);
         assert_global_status(HARDPOINTS_DEPLOYED | SUPERCRUISE, GlobalStatus::Normal);
+        assert_global_status(NIGHT_VISION_ON, GlobalStatus::NightVisionOn);
     }
 }

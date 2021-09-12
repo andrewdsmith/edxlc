@@ -49,8 +49,8 @@ blocked = ["off", "off"]
 alert = ["flash", "red-amber"]
 ```
 
-The `hardpoints-deployed` section is optional and will fall back to the values
-in `default` if missing.
+The `hardpoints-deployed` and `night-vision` sections are optional and will
+fall back to the values in `default` if missing.
 
 For each state you specify the light mode for boolean and red/amber/green
 lights. For boolean lights, the supported modes are:

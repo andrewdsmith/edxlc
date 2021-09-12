@@ -3,6 +3,7 @@
 ## Version 1.10
 
 - Supports active state for night vision control
+- Supports alternative (optional) configuration when night vision on
 - Make alternative hardpoints deployed configuration optional in the
   configuration file; falls back to default configuration from the file if
   missing
