@@ -96,13 +96,19 @@ pub fn write_default_file_if_missing() {
             inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
-            alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
+            alert: (
+                BooleanLightMode::Flash,
+                RedAmberGreenLightMode::RedAmberFlash,
+            ),
         },
         hardpoints_deployed: Some(ModeConfig {
             inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Red),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
-            alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
+            alert: (
+                BooleanLightMode::Flash,
+                RedAmberGreenLightMode::RedAmberFlash,
+            ),
         }),
         night_vision: None,
     };

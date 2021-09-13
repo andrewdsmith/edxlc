@@ -40,13 +40,13 @@ The default configuration is:
 inactive = ["off", "green"]
 active = ["on", "amber"]
 blocked = ["off", "red"]
-alert = ["flash", "red-amber"]
+alert = ["flash", "red-amber-flash"]
 
 [hardpoints-deployed]
 inactive = ["off", "red"]
 active = ["on", "amber"]
 blocked = ["off", "off"]
-alert = ["flash", "red-amber"]
+alert = ["flash", "red-amber-flash"]
 ```
 
 The `hardpoints-deployed` and `night-vision` sections are optional and will
@@ -62,10 +62,18 @@ lights. For boolean lights, the supported modes are:
 For red/amber/green ligths, the supported modes are:
 
 - `off`
-- `green`
-- `amber`
 - `red`
-- `red-amber`
+- `amber`
+- `green`
+- `red-flash`
+- `red-amber-flash`
+- `red-green-flash`
+- `amber-flash`
+- `amber-green-flash`
+- `amber-red-flash`
+- `green-flash`
+- `green-amber-flash`
+- `green-red-flash`
 
 The app reads the control bindings from the custom bindings file (Odyssey only)
 so if you're using any other pre-defined set of bindings it won't work (yet).

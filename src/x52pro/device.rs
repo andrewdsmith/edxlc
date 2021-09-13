@@ -223,15 +223,29 @@ pub enum RedAmberGreenLightMode {
     Red,
     Amber,
     Green,
+    // This variant is the same as `RedAmberFlash` but left in for backwards
+    // compatability with older configuration files.
     RedAmber,
+    RedFlash,
+    RedAmberFlash,
+    RedGreenFlash,
+    AmberFlash,
+    AmberRedFlash,
+    AmberGreenFlash,
+    GreenFlash,
+    GreenAmberFlash,
+    GreenRedFlash,
 }
 
 impl RedAmberGreenLightMode {
     /// Returns true if the mode requires animation, i.e. changes over time.
     fn is_animated(&self) -> bool {
         match self {
-            RedAmberGreenLightMode::RedAmber => true,
-            _ => false,
+            RedAmberGreenLightMode::Off
+            | RedAmberGreenLightMode::Red
+            | RedAmberGreenLightMode::Amber
+            | RedAmberGreenLightMode::Green => false,
+            _ => true,
         }
     }
 }

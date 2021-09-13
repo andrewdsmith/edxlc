@@ -98,16 +98,23 @@ fn red_amber_green_state_for_mode(
     light_mode: &RedAmberGreenLightMode,
     milliseconds: u128,
 ) -> RedAmberGreenLightState {
+    use RedAmberGreenLightState::*;
+
     match light_mode {
-        RedAmberGreenLightMode::Off => RedAmberGreenLightState::Off,
-        RedAmberGreenLightMode::Red => RedAmberGreenLightState::Red,
-        RedAmberGreenLightMode::Amber => RedAmberGreenLightState::Amber,
-        RedAmberGreenLightMode::Green => RedAmberGreenLightState::Green,
-        RedAmberGreenLightMode::RedAmber => animated_state(
-            milliseconds,
-            RedAmberGreenLightState::Red,
-            RedAmberGreenLightState::Amber,
-        ),
+        RedAmberGreenLightMode::Off => Off,
+        RedAmberGreenLightMode::Red => Red,
+        RedAmberGreenLightMode::Amber => Amber,
+        RedAmberGreenLightMode::Green => Green,
+        RedAmberGreenLightMode::RedAmber => animated_state(milliseconds, Red, Amber),
+        RedAmberGreenLightMode::RedFlash => animated_state(milliseconds, Red, Off),
+        RedAmberGreenLightMode::RedAmberFlash => animated_state(milliseconds, Red, Amber),
+        RedAmberGreenLightMode::RedGreenFlash => animated_state(milliseconds, Red, Green),
+        RedAmberGreenLightMode::AmberFlash => animated_state(milliseconds, Amber, Off),
+        RedAmberGreenLightMode::AmberRedFlash => animated_state(milliseconds, Amber, Red),
+        RedAmberGreenLightMode::AmberGreenFlash => animated_state(milliseconds, Amber, Green),
+        RedAmberGreenLightMode::GreenFlash => animated_state(milliseconds, Green, Off),
+        RedAmberGreenLightMode::GreenAmberFlash => animated_state(milliseconds, Green, Amber),
+        RedAmberGreenLightMode::GreenRedFlash => animated_state(milliseconds, Green, Red),
     }
 }
 
@@ -167,5 +174,14 @@ mod tests {
         assert_rag_mapping(RedAmberGreenLightMode::Amber, Amber, Amber);
         assert_rag_mapping(RedAmberGreenLightMode::Green, Green, Green);
         assert_rag_mapping(RedAmberGreenLightMode::RedAmber, Red, Amber);
+        assert_rag_mapping(RedAmberGreenLightMode::RedFlash, Red, Off);
+        assert_rag_mapping(RedAmberGreenLightMode::RedAmberFlash, Red, Amber);
+        assert_rag_mapping(RedAmberGreenLightMode::RedGreenFlash, Red, Green);
+        assert_rag_mapping(RedAmberGreenLightMode::AmberFlash, Amber, Off);
+        assert_rag_mapping(RedAmberGreenLightMode::AmberRedFlash, Amber, Red);
+        assert_rag_mapping(RedAmberGreenLightMode::AmberGreenFlash, Amber, Green);
+        assert_rag_mapping(RedAmberGreenLightMode::GreenFlash, Green, Off);
+        assert_rag_mapping(RedAmberGreenLightMode::GreenAmberFlash, Green, Amber);
+        assert_rag_mapping(RedAmberGreenLightMode::GreenRedFlash, Green, Red);
     }
 }
