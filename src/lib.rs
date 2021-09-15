@@ -1,4 +1,4 @@
-mod config;
+pub mod config;
 mod events;
 mod game;
 mod x52pro;
@@ -14,25 +14,9 @@ use std::thread;
 use std::time::Duration;
 use x52pro::{Device, StatusLevelToModeMapper};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::ALERT_FLASH_MILLISECONDS as u64;
 
-#[cfg(debug_assertions)]
-const DEFAULT_LOG_LEVEL: &str = "edxlc=debug";
-#[cfg(not(debug_assertions))]
-const DEFAULT_LOG_LEVEL: &str = "info";
-
-pub fn run() {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(DEFAULT_LOG_LEVEL))
-        .init();
-
-    info!("EDXLC {}", VERSION);
-    info!("Press Ctrl+C to exit");
-
-    config::write_default_file_if_missing();
-    let config = Config::from_file();
-    debug!("{:?}", config);
-
+pub fn run(config: Config) {
     let mut x52pro = Device::new();
 
     let bindings_file_path = game::file::bindings_file_path();
@@ -82,6 +66,7 @@ pub fn run() {
         })
         .expect("Failed to watch status file");
 
+    info!("Press Ctrl+C to exit");
     ctrlc::set_handler(move || {
         info!("Received Ctrl+C");
         tx2.send(Event::Exit).expect("Could not send exit message");
