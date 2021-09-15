@@ -47,6 +47,12 @@ inactive = ["off", "red"]
 active = ["on", "amber"]
 blocked = ["off", "off"]
 alert = ["flash", "amber-flash"]
+
+[night-vision]
+inactive = ["off", "off"]
+active = ["on", "green"]
+blocked = ["off", "off"]
+alert = ["flash", "green-flash"]
 ```
 
 The `hardpoints-deployed` and `night-vision` sections are optional and will

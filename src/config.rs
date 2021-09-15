@@ -104,7 +104,12 @@ pub fn write_default_file_if_missing() {
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::AmberFlash),
         }),
-        night_vision: None,
+        night_vision: Some(ModeConfig {
+            inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
+            active: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
+            blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
+            alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::GreenFlash),
+        }),
     };
 
     let toml = toml::to_string(&config).expect("Could not serialize default configuration");
