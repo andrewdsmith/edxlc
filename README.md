@@ -40,13 +40,13 @@ The default configuration is:
 inactive = ["off", "green"]
 active = ["on", "amber"]
 blocked = ["off", "red"]
-alert = ["flash", "red-amber-flash"]
+alert = ["flash", "amber-flash"]
 
 [hardpoints-deployed]
 inactive = ["off", "red"]
 active = ["on", "amber"]
 blocked = ["off", "off"]
-alert = ["flash", "red-amber-flash"]
+alert = ["flash", "amber-flash"]
 ```
 
 The `hardpoints-deployed` and `night-vision` sections are optional and will

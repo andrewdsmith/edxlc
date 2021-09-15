@@ -6,6 +6,8 @@
 - Supports alternative (optional) configuration when night vision on
 - Supports all combinations of two colours for flashing light modes in
   configuration
+- Change default active light mode to `amber-flash` to make this state more
+  noticeable
 - Make alternative hardpoints deployed configuration optional in the
   configuration file; falls back to default configuration from the file if
   missing
