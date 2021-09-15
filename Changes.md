@@ -8,6 +8,7 @@
   configuration
 - Change default active light mode to `amber-flash` to make this state more
   noticeable
+- Supports specifying the configuration file as a command line argument
 - Make alternative hardpoints deployed configuration optional in the
   configuration file; falls back to default configuration from the file if
   missing

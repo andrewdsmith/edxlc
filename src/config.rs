@@ -7,8 +7,6 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
-const CONFIG_FILENAME: &str = "edxlc.toml";
-
 /// Raw configuration string values (as read from a configuraiton file) for a specific game mode.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 struct ModeConfig {
@@ -28,11 +26,10 @@ pub struct Config {
 }
 
 impl Config {
-    /// Returns a new instance constructed by loading the configuration file
-    /// present in the current working directory. Panics if the TOML cannot be
-    /// parsed.
-    pub fn from_file() -> Self {
-        let toml = fs::read_to_string(CONFIG_FILENAME).expect("Could not read configuration file");
+    /// Returns a new instance constructed by loading the give configuration
+    /// file. Panics if the TOML cannot be parsed.
+    pub fn from_file(config_filename: String) -> Self {
+        let toml = fs::read_to_string(config_filename).expect("Could not read configuration file");
         Self::from_toml(&toml)
     }
 
@@ -81,11 +78,11 @@ fn light_mode_from_config_values(value: (BooleanLightMode, RedAmberGreenLightMod
     LightMode::new(boolean, red_amber_green)
 }
 
-/// Writes a default configuration file in the current working directory if a
-/// file with the expected name does not exist. Panics if the file cannot be
-/// written, e.g. if the user does not have permission.
-pub fn write_default_file_if_missing() {
-    if Path::new(CONFIG_FILENAME).exists() {
+/// Writes a default configuration file to the given filename if that file does
+/// not exist. Panics if the file cannot be written, e.g. if the user does not
+/// have permission.
+pub fn write_default_file_if_missing(config_filename: &str) {
+    if Path::new(config_filename).exists() {
         return;
     }
 
@@ -113,7 +110,7 @@ pub fn write_default_file_if_missing() {
     };
 
     let toml = toml::to_string(&config).expect("Could not serialize default configuration");
-    fs::write(CONFIG_FILENAME, toml).expect("Could not write default configuration file");
+    fs::write(config_filename, toml).expect("Could not write default configuration file");
 }
 
 #[cfg(test)]

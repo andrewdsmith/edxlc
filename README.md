@@ -81,6 +81,12 @@ For red/amber/green ligths, the supported modes are:
 - `green-amber-flash`
 - `green-red-flash`
 
+The configuration file used can be specified as a command line argument:
+
+```
+edxlc.exe C:\Path\To\My\config.toml
+```
+
 The app reads the control bindings from the custom bindings file (Odyssey only)
 so if you're using any other pre-defined set of bindings it won't work (yet).
 
