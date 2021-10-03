@@ -149,8 +149,8 @@ impl Ship {
                         // flight, specifically for blocking states like
                         // hardpoints deployed.
                         ConditionStatusLevelMapping::new(
-                            Condition::All(SUPERCRUISE),
-                            StatusLevel::Active,
+                            Condition::All(SUPERCRUISE | HARDPOINTS_DEPLOYED),
+                            StatusLevel::Inactive,
                         ),
                         ConditionStatusLevelMapping::new(
                             Condition::Any(
@@ -665,16 +665,11 @@ mod tests {
     }
 
     #[test]
-    fn supercruise_maps_to_frame_shift_drive_active() {
-        assert_status(SUPERCRUISE, Attribute::FrameShiftDrive, StatusLevel::Active);
-    }
-
-    #[test]
-    fn supercruise_and_hardpoints_deployed_and_maps_to_frame_shift_drive_active() {
+    fn supercruise_and_hardpoints_deployed_and_maps_to_frame_shift_drive_inactive() {
         assert_status(
             SUPERCRUISE + HARDPOINTS_DEPLOYED,
             Attribute::FrameShiftDrive,
-            StatusLevel::Active,
+            StatusLevel::Inactive,
         );
     }
 

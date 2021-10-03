@@ -6,13 +6,13 @@ state of your ship or SRV in the game.
 
 The app monitors the state of the following:
 
-- Landing gear
-- Cargo scoop
-- External lights
-- Frame shift drive (FSD)
-- Silent running
-- Hardpoints
-- Night vision
+- Landing gear deployed
+- Cargo scoop open
+- External lights activated
+- Frame shift drive (FSD) charging
+- Silent running activated
+- Hardpoints deployed
+- Night vision activated
 
 Where a game control for these items is bound to a button on the joystick, the
 button light will indicate the following states:

@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.11
+
+- Do not show FSD as active when in supercruise
+
 ## Version 1.10
 
 - Supports active state for night vision control
