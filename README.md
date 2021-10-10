@@ -1,10 +1,20 @@
 # Elite Dangerous X52 Pro Light Control - EDXLC
 
-This small companion app to the game Elite Dangerous automatically controls the
-button lights on your Saitek X52 Pro joystick so that they reflect the current
-state of your ship or SRV in the game.
+**EDXLC** is a companion app for the game **Elite Dangerous** that controls the
+button lights on your **Saitek X52 Pro** joystick so that they reflect the
+current state of your ship in the game.
 
-The app monitors the state of the following:
+Download [the latest zip file][download], unzip, and run `edxlc.exe`. The app
+runs in a console window. Exit with `Ctrl`+`C` or just close the console
+window.
+
+[download]: https://github.com/andrewdsmith/edxlc/releases/download/v1.12/edxlc_v1.12.zip
+
+On first run the app creates a simple text file called `edxlc.toml`. Edit this
+file to change how the app behaves. Restart the app after making any changes to
+this file. To reset to defaults delete the file.
+
+The app detects the following:
 
 - Landing gear deployed
 - Cargo scoop open
@@ -14,26 +24,22 @@ The app monitors the state of the following:
 - Hardpoints deployed
 - Night vision activated
 
-Where a game control for these items is bound to a button on the joystick, the
-button light will indicate the following states:
+Where a game control is bound in game to a button on the joystick, the button
+light will indicate the following states:
 
 - Inactive - Green (Off) - Not currently activated but can be activated
 - Active - Amber (On) - Currently activated
 - Blocked - Red (Off) - Cannot be activated
-- Alert - Flashing Red/Amber (Flashing) - May need to be activated urgently
+- Alert - Flashing amber (Flashing) - May need to be activated urgently
 
-An example blocked state is FSD activation while mass-locked. Examples of alert
-states include heat sinks when overheating and undeployed landing gear after
-docking permission has been granted.
+An example blocked state is FSD charging while mass-locked or landing gear
+deployed. Examples of alert states include heat sinks when overheating and
+landing gear when docking permission has been granted.
 
-The overall game state also determines how each state is mapped to a colour,
-meaning different colours are used when hardpoints are deployed as to normal.
+When hardpoints are deployed or night vision is activated the app switches to
+an alternative configuration.
 
-The light behaviour can be configured by editing the `edxlc.toml` file. This
-file is created automatically when the app is first run if it does not exist.
-You must restart the app to pick up changes in this configuration.
-
-The default configuration is:
+The default configurations in `edxlc.toml` are:
 
 ```toml
 [default]
@@ -81,7 +87,7 @@ For red/amber/green ligths, the supported modes are:
 - `green-amber-flash`
 - `green-red-flash`
 
-The configuration file used can be specified as a command line argument:
+To use an alternative configuration file specify it as a command line argument:
 
 ```
 edxlc.exe C:\Path\To\My\config.toml
@@ -89,11 +95,3 @@ edxlc.exe C:\Path\To\My\config.toml
 
 The app reads the control bindings from the custom bindings file (Odyssey only)
 so if you're using any other pre-defined set of bindings it won't work (yet).
-
-The app runs in a console window and can be exited with Ctrl+C.
-
-## Installation
-
-You can run `edxlc.exe` from anywhere but it assumes you have the X52 Pro
-drivers installed at the default location of
-`C:\Program Files\Logitech\DirectOutput`.
