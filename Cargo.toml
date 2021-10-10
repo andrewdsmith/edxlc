@@ -1,6 +1,6 @@
 [package]
 name = "edxlc"
-version = "1.11.0"
+version = "1.12.0"
 authors = ["Andrew Smith"]
 edition = "2018"
 
