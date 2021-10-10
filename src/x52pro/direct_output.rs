@@ -7,6 +7,8 @@ use std::os::windows::ffi::OsStrExt;
 use winapi::ctypes::wchar_t;
 use winapi::shared::minwindef::DWORD;
 use winapi::um::winnt::HRESULT;
+use winreg::enums::HKEY_LOCAL_MACHINE;
+use winreg::RegKey;
 
 type DeviceHandle = *const c_void;
 
@@ -31,6 +33,9 @@ const FLAG_SET_AS_ACTIVE: DWORD = 1;
 
 const PLUGIN_NAME: &str = "EDXLC";
 const PAGE_ID: DWORD = 1;
+
+const REGISTRY_KEY_NAME: &str = r"DirectOutput";
+const REGISTRY_KEY_PATH: &str = r"SOFTWARE\Logitech\DirectOutput";
 
 /// An instance of a safe wrapper around the Saitek DirectOutput library.
 pub struct DirectOutput {
@@ -68,10 +73,19 @@ impl DirectOutput {
     }
 
     fn load_library() -> Library {
-        unsafe {
-            Library::new(r"C:\Program Files\Logitech\DirectOutput\DirectOutput.dll")
-                .expect("Could not load DirectOutput.dll")
-        }
+        let path = Self::directoutput_dll_path().expect(
+            "Could not find path for DirectOutput.dll in registry; are the drivers installed?",
+        );
+
+        unsafe { Library::new(path).expect("Could not load DirectOutput.dll") }
+    }
+
+    fn directoutput_dll_path() -> std::io::Result<String> {
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let key = hklm.open_subkey(REGISTRY_KEY_PATH)?;
+        let path: String = key.get_value(REGISTRY_KEY_NAME)?;
+        debug!("DirectOutput DLL path = {:?}", path);
+        Ok(path)
     }
 
     /// Given a function name returns a symbol for that function in the

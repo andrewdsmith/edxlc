@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.12
+
+- Automatically detect location of driver files
+
 ## Version 1.11
 
 - Do not show FSD as active when in supercruise
