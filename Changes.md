@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## Version 1.13
 
 - Add option to configuration file to specify location of bindings file
 

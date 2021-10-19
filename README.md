@@ -93,5 +93,15 @@ To use an alternative configuration file specify it as a command line argument:
 edxlc.exe C:\Path\To\My\config.toml
 ```
 
-The app reads the control bindings from the custom bindings file (Odyssey only)
-so if you're using any other pre-defined set of bindings it won't work (yet).
+By default the app reads the game control bindings from the `Custom.4.0.binds`
+bindings file used by Odyssey. You can use a different bindings file (e.g.
+`Custom.3.0.binds` for Horizons) by specifying the full path to the file in the
+`bindings` value in the `[files]` section of `config.toml`, e.g.
+
+```toml
+[files]
+bindings = 'C:\Users\DavidB\AppData\Local\Frontier Developments\Elite Dangerous\Options\Bindings\Custom.3.0.binds'
+```
+
+Important: Due to the way the TOML file format works, you should use single
+quote characters around the path (as shown above).
