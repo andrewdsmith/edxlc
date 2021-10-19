@@ -19,7 +19,7 @@ const ANIMATION_TICK_MILLISECONDS: u64 = x52pro::ALERT_FLASH_MILLISECONDS as u64
 pub fn run(config: Config) {
     let mut x52pro = Device::new();
 
-    let bindings_file_path = game::file::bindings_file_path();
+    let bindings_file_path = config.bindings_file_path();
     debug!("Bindings file path: {:?}", bindings_file_path);
 
     let controls = Controls::from_file(&bindings_file_path);

@@ -8,12 +8,6 @@ use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
 
-pub fn bindings_file_path() -> PathBuf {
-    dirs::data_local_dir()
-        .expect("Can't find user app data directory")
-        .join(r#"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.4.0.binds"#)
-}
-
 /// Returns a `PathBuf` for the directory containing the game's journal files.
 pub fn journal_dir_path() -> PathBuf {
     dirs::home_dir()

@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+- Add option to configuration file to specify location of bindings file
+
 ## Version 1.12
 
 - Automatically detect location of driver files

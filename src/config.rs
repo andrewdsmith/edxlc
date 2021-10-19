@@ -5,7 +5,10 @@ use crate::x52pro::{
 };
 use log::info;
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 /// Raw configuration string values (as read from a configuraiton file) for a specific game mode.
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -20,10 +23,19 @@ struct ModeConfig {
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
+    files: Option<Files>,
     default: ModeConfig,
     hardpoints_deployed: Option<ModeConfig>,
     night_vision: Option<ModeConfig>,
 }
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+struct Files {
+    bindings: Option<String>,
+}
+
+const DEFAULT_BINDINGS_FILE_PATH: &str =
+    r"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.4.0.binds";
 
 impl Config {
     /// Returns a new instance constructed by loading the give configuration
@@ -70,6 +82,20 @@ impl Config {
             None => &self.default,
         }
     }
+
+    /// Returns the configured path for the bindings file or the default if not
+    /// configured.
+    pub fn bindings_file_path(&self) -> PathBuf {
+        if let Some(files) = &self.files {
+            if let Some(bindings) = &files.bindings {
+                return PathBuf::from(bindings);
+            }
+        }
+
+        dirs::data_local_dir()
+            .expect("Can't find user app data directory")
+            .join(DEFAULT_BINDINGS_FILE_PATH)
+    }
 }
 
 /// Returns the `LightMode` value corresponding to the mode tuple.
@@ -89,6 +115,7 @@ pub fn write_default_file_if_missing(config_filename: &str) {
     info!("Writing default configuration file");
 
     let config = Config {
+        files: None,
         default: ModeConfig {
             inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
@@ -120,6 +147,8 @@ mod tests {
     #[test]
     fn config_from_toml_returns_an_instance() {
         let toml = r#"
+            [files]
+            bindings = 'C:\Path\To.binds'
             [default]
             inactive = ["off", "green"]
             active = ["on", "amber"]
@@ -137,6 +166,9 @@ mod tests {
             alert = ["on", "red-amber"]"#;
 
         let expected = Config {
+            files: Some(Files {
+                bindings: Some(String::from(r"C:\Path\To.binds")),
+            }),
             default: ModeConfig {
                 inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Green),
                 active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
@@ -170,6 +202,7 @@ mod tests {
             alert = ["flash", "red-amber"]"#;
 
         let expected = Config {
+            files: None,
             default: ModeConfig {
                 inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Green),
                 active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
@@ -194,6 +227,7 @@ mod tests {
         };
 
         let config = Config {
+            files: None,
             default: ModeConfig {
                 inactive: default_light_config,
                 active: default_light_config,
@@ -226,6 +260,7 @@ mod tests {
         let night_vision_light_config = (BooleanLightMode::Off, RedAmberGreenLightMode::Off);
 
         let config = Config {
+            files: None,
             default: ModeConfig {
                 inactive: default_light_config,
                 active: default_light_config,
@@ -269,6 +304,7 @@ mod tests {
         // Could remove the `None` values by implementing `Default` on the
         // struct.
         let config_without_hardpoints_deployed = Config {
+            files: None,
             default: ModeConfig {
                 inactive: default_light_config,
                 active: default_light_config,
