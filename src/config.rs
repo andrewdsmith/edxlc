@@ -35,7 +35,7 @@ struct Files {
 }
 
 const DEFAULT_BINDINGS_FILE_PATH: &str =
-    r"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.4.0.binds";
+    r"Frontier Developments\Elite Dangerous\Options\Bindings\Custom.4.2.binds";
 
 impl Config {
     /// Returns a new instance constructed by loading the give configuration
