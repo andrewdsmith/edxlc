@@ -36,7 +36,7 @@ An example blocked state is FSD charging while mass-locked or landing gear
 deployed. Examples of alert states include heat sinks when overheating and
 landing gear when docking permission has been granted.
 
-When hardpoints are deployed or night vision is activated the app switches to
+When hardpoints are deployed or night vision or silent running is activated, the app switches to
 an alternative configuration.
 
 The default configurations in `edxlc.toml` are:
@@ -60,14 +60,22 @@ active = ["on", "green"]
 blocked = ["off", "off"]
 alert = ["flash", "green-flash"]
 
+[silent-running]
+inactive = ["off", "off"]
+active = ["on", "green"]
+blocked = ["off", "red"]
+alert = ["flash", "green-flash"]
+
 [mfd]
 line1 = "EDXLC"
 line2 = ""
 line3 = ""
 ```
 
-The `hardpoints-deployed` and `night-vision` sections are optional and will
-fall back to the values in `default` if missing.
+The `hardpoints-deployed`, `night-vision`, and `silent-running` sections are optional and will
+fall back to the values in `default` if missing. 
+
+Priority order goes as follows: `silent-running` > `night-vision` > `hardpoints-deployed` > `default`
 
 The `[mfd]` section allows you to customize the three lines of text displayed on
 the X52 Pro's Multi-Function Display (MFD). If this section is missing, the
@@ -81,7 +89,7 @@ lights. For boolean lights, the supported modes are:
 - `on`
 - `flash`
 
-For red/amber/green ligths, the supported modes are:
+For red/amber/green lights, the supported modes are:
 
 - `off`
 - `red`

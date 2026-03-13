@@ -111,6 +111,7 @@ pub enum GlobalStatus {
     Normal,
     HardpointsDeployed,
     NightVisionOn,
+    SilentRunning,
 }
 
 pub struct Ship {
@@ -293,7 +294,9 @@ impl Ship {
 
     /// Returns the current global (highest precendence) status for the ship.
     pub fn global_status(&self) -> GlobalStatus {
-        if self.any_status_flags_set(NIGHT_VISION_ON) {
+        if self.any_status_flags_set(SILENT_RUNNING) {
+            GlobalStatus::SilentRunning
+        } else if self.any_status_flags_set(NIGHT_VISION_ON) {
             GlobalStatus::NightVisionOn
         } else if self.any_status_flags_set(SUPERCRUISE) {
             // FSS scans while in supercruise can cause the hardpoint deployed

@@ -1,5 +1,9 @@
 # Changes
 
+## Version 1.14
+
+- Supports alternative (optional) configuration when silent running is on
+
 ## Version 1.13
 
 - Add option to configuration file to specify location of bindings file
