@@ -2,7 +2,10 @@
 
 ## Version 1.14
 
+- Reads control bindings from the latest `Custom.4.2.binds` file by default,
+  preventing a crash on start with the default configuration
 - Supports alternative (optional) configuration when silent running is on
+- Supports setting the MFD text
 
 ## Version 1.13
 
