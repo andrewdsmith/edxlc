@@ -28,6 +28,13 @@ type SetLedFn = unsafe extern "C" fn(
     dwIndex: DWORD,
     dwValue: DWORD,
 ) -> HRESULT;
+type SetStringFn = unsafe extern "C" fn(
+    hDevice: DeviceHandle,
+    dwPage: DWORD,
+    dwIndex: DWORD,
+    cchValue: DWORD,
+    wszValue: *const wchar_t,
+) -> HRESULT;
 
 const FLAG_SET_AS_ACTIVE: DWORD = 1;
 
@@ -48,6 +55,7 @@ pub struct DirectOutput {
     enumerate_fn: Symbol<EnumerateFn>,
     add_page_fn: Symbol<AddPageFn>,
     set_led_fn: Symbol<SetLedFn>,
+    set_string_fn: Symbol<SetStringFn>,
     device: DeviceHandle,
 }
 
@@ -61,6 +69,7 @@ impl DirectOutput {
         let enumerate_fn = Self::get_library_symbol(&library, b"DirectOutput_Enumerate");
         let add_page_fn = Self::get_library_symbol(&library, b"DirectOutput_AddPage");
         let set_led_fn = Self::get_library_symbol(&library, b"DirectOutput_SetLed");
+        let set_string_fn = Self::get_library_symbol(&library, b"DirectOutput_SetString");
 
         Self {
             library,
@@ -68,6 +77,7 @@ impl DirectOutput {
             enumerate_fn,
             add_page_fn,
             set_led_fn,
+            set_string_fn,
             device: std::ptr::null(),
         }
     }
@@ -159,6 +169,29 @@ impl DirectOutput {
 
             if result != 0 {
                 panic!("Can't set LED, return value {}", result);
+            }
+        }
+    }
+
+    /// Sets the text on the MFD display at the given `index`. The `index` must
+    /// be between 0 and 2 inclusive for the X52Pro. Panics if setting the
+    /// string fails.
+    pub fn set_string(&self, index: u32, text: &str) {
+        debug!("Setting MFD string {} to \"{}\"", index, text);
+
+        let wide_string = Self::win32_string(text);
+
+        unsafe {
+            let result = (self.set_string_fn)(
+                self.device,
+                PAGE_ID,
+                index,
+                text.len() as DWORD,
+                wide_string.as_ptr(),
+            );
+
+            if result != 0 {
+                panic!("Can't set MFD string, return value {}", result);
             }
         }
     }

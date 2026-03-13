@@ -65,12 +65,22 @@ inactive = ["off", "off"]
 active = ["on", "green"]
 blocked = ["off", "red"]
 alert = ["flash", "green-flash"]
+
+[mfd]
+line1 = "EDXLC"
+line2 = ""
+line3 = ""
 ```
 
 The `hardpoints-deployed`, `night-vision`, and `silent-running` sections are optional and will
 fall back to the values in `default` if missing. 
 
 Priority order goes as follows: `silent-running` > `night-vision` > `hardpoints-deployed` > `default`
+
+The `[mfd]` section allows you to customize the three lines of text displayed on
+the X52 Pro's Multi-Function Display (MFD). If this section is missing, the
+first line defaults to `EDXLC`. Each line supports up to 16 characters. Lines
+longer than 16 characters will scroll.
 
 For each state you specify the light mode for boolean and red/amber/green
 lights. For boolean lights, the supported modes are:
@@ -97,7 +107,7 @@ For red/amber/green lights, the supported modes are:
 
 To use an alternative configuration file specify it as a command line argument:
 
-```
+```text
 edxlc.exe C:\Path\To\My\config.toml
 ```
 

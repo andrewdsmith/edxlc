@@ -156,6 +156,15 @@ impl Device {
             light_mapping.update_state(&self.direct_output, &self.light_mode_to_state_mapper);
         }
     }
+
+    /// Sets the text on the MFD display.
+    pub fn set_mfd_text(&self, text_lines: Vec<String>) {
+        for (index, text) in text_lines.iter().enumerate() {
+            if index < 3 {
+                self.direct_output.set_string(index as u32, text);
+            }
+        }
+    }
 }
 
 /// Supported input buttons or axes on the device.

@@ -28,6 +28,14 @@ pub struct Config {
     hardpoints_deployed: Option<ModeConfig>,
     night_vision: Option<ModeConfig>,
     silent_running: Option<ModeConfig>,
+    mfd: Option<MfdConfig>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize, Default)]
+pub struct MfdConfig {
+    pub line1: Option<String>,
+    pub line2: Option<String>,
+    pub line3: Option<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -98,6 +106,38 @@ impl Config {
             .expect("Can't find user app data directory")
             .join(DEFAULT_BINDINGS_FILE_PATH)
     }
+
+    /// Returns the MFD configuration if provided.
+    pub fn mfd(&self) -> Option<&MfdConfig> {
+        self.mfd.as_ref()
+    }
+
+    /// Returns the MFD lines as a vector of strings.
+    pub fn mfd_lines(&self) -> Vec<String> {
+        let mut lines = Vec::new();
+        if let Some(mfd) = &self.mfd {
+            if let Some(line1) = &mfd.line1 {
+                lines.push(line1.clone());
+            } else {
+                lines.push(String::new());
+            }
+            if let Some(line2) = &mfd.line2 {
+                lines.push(line2.clone());
+            } else {
+                lines.push(String::new());
+            }
+            if let Some(line3) = &mfd.line3 {
+                lines.push(line3.clone());
+            } else {
+                lines.push(String::new());
+            }
+        } else {
+            lines.push(String::from("EDXLC"));
+            lines.push(String::new());
+            lines.push(String::new());
+        }
+        lines
+    }
 }
 
 /// Returns the `LightMode` value corresponding to the mode tuple.
@@ -141,6 +181,11 @@ pub fn write_default_file_if_missing(config_filename: &str) {
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::GreenFlash),
+        }),
+        mfd: Some(MfdConfig {
+            line1: Some(String::from("EDXLC")),
+            line2: None,
+            line3: None,
         }),
     };
 
@@ -206,6 +251,7 @@ mod tests {
                 blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
                 alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
             }),
+            mfd: None,
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
@@ -231,6 +277,7 @@ mod tests {
             hardpoints_deployed: None,
             night_vision: None,
             silent_running: None,
+            mfd: None,
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
@@ -262,6 +309,7 @@ mod tests {
             }),
             night_vision: None,
             silent_running: None,
+            mfd: None,
         };
 
         let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::Normal);
@@ -296,6 +344,7 @@ mod tests {
                 alert: night_vision_light_config,
             }),
             silent_running: None,
+            mfd: None,
         };
 
         let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::NightVisionOn);
@@ -336,6 +385,7 @@ mod tests {
             hardpoints_deployed: None,
             night_vision: None,
             silent_running: None,
+            mfd: None,
         };
 
         let expected_mapper = StatusLevelToModeMapper {
