@@ -27,6 +27,7 @@ pub struct Config {
     default: ModeConfig,
     hardpoints_deployed: Option<ModeConfig>,
     night_vision: Option<ModeConfig>,
+    silent_running: Option<ModeConfig>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -63,6 +64,7 @@ impl Config {
                 self.mode_config_or_default(&self.hardpoints_deployed)
             }
             GlobalStatus::NightVisionOn => self.mode_config_or_default(&self.night_vision),
+            GlobalStatus::SilentRunning => self.mode_config_or_default(&self.silent_running),
         };
 
         StatusLevelToModeMapper::new(
@@ -123,7 +125,7 @@ pub fn write_default_file_if_missing(config_filename: &str) {
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::AmberFlash),
         },
         hardpoints_deployed: Some(ModeConfig {
-            inactive: (BooleanLightMode::On, RedAmberGreenLightMode::Red),
+            inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::AmberFlash),
@@ -132,6 +134,12 @@ pub fn write_default_file_if_missing(config_filename: &str) {
             inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
             active: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
             blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
+            alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::GreenFlash),
+        }),
+        silent_running: Some(ModeConfig {
+            inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Off),
+            active: (BooleanLightMode::On, RedAmberGreenLightMode::Green),
+            blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
             alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::GreenFlash),
         }),
     };
@@ -163,7 +171,12 @@ mod tests {
             inactive = ["flash", "green"]
             active = ["flash", "amber"]
             blocked = ["off", "red"]
-            alert = ["on", "red-amber"]"#;
+            alert = ["on", "red-amber"]
+            [silent-running]
+            inactive = ["off", "amber"]
+            active = ["on", "amber"]
+            blocked = ["off", "red"]
+            alert = ["flash", "red-amber"]"#;
 
         let expected = Config {
             files: Some(Files {
@@ -186,6 +199,12 @@ mod tests {
                 active: (BooleanLightMode::Flash, RedAmberGreenLightMode::Amber),
                 blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
                 alert: (BooleanLightMode::On, RedAmberGreenLightMode::RedAmber),
+            }),
+            silent_running: Some(ModeConfig {
+                inactive: (BooleanLightMode::Off, RedAmberGreenLightMode::Amber),
+                active: (BooleanLightMode::On, RedAmberGreenLightMode::Amber),
+                blocked: (BooleanLightMode::Off, RedAmberGreenLightMode::Red),
+                alert: (BooleanLightMode::Flash, RedAmberGreenLightMode::RedAmber),
             }),
         };
 
@@ -211,6 +230,7 @@ mod tests {
             },
             hardpoints_deployed: None,
             night_vision: None,
+            silent_running: None,
         };
 
         assert_eq!(Config::from_toml(&String::from(toml)), expected);
@@ -241,6 +261,7 @@ mod tests {
                 alert: other_light_config,
             }),
             night_vision: None,
+            silent_running: None,
         };
 
         let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::Normal);
@@ -274,6 +295,7 @@ mod tests {
                 blocked: night_vision_light_config,
                 alert: night_vision_light_config,
             }),
+            silent_running: None,
         };
 
         let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::NightVisionOn);
@@ -313,6 +335,7 @@ mod tests {
             },
             hardpoints_deployed: None,
             night_vision: None,
+            silent_running: None,
         };
 
         let expected_mapper = StatusLevelToModeMapper {
