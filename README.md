@@ -36,8 +36,8 @@ An example blocked state is FSD charging while mass-locked or landing gear
 deployed. Examples of alert states include heat sinks when overheating and
 landing gear when docking permission has been granted.
 
-When hardpoints are deployed or night vision or silent running is activated, the app switches to
-an alternative configuration.
+When hardpoints are deployed, night vision is enabled, or silent running is
+activated, then the app switches to an alternative configuration.
 
 The default configurations in `edxlc.toml` are:
 
@@ -72,10 +72,10 @@ line2 = ""
 line3 = ""
 ```
 
-The `hardpoints-deployed`, `night-vision`, and `silent-running` sections are optional and will
-fall back to the values in `default` if missing. 
-
-Priority order goes as follows: `silent-running` > `night-vision` > `hardpoints-deployed` > `default`
+The `hardpoints-deployed`, `night-vision`, and `silent-running` sections are
+optional and will fall back to the values in `default` if missing. The
+precendence order is fixed to: `silent-running` > `night-vision` >
+`hardpoints-deployed` > `default`
 
 The `[mfd]` section allows you to customize the three lines of text displayed on
 the X52 Pro's Multi-Function Display (MFD). If this section is missing, the
@@ -111,7 +111,7 @@ To use an alternative configuration file specify it as a command line argument:
 edxlc.exe C:\Path\To\My\config.toml
 ```
 
-By default the app reads the game control bindings from the `Custom.4.0.binds`
+By default the app reads the game control bindings from the `Custom.4.2.binds`
 bindings file used by Odyssey. You can use a different bindings file (e.g.
 `Custom.3.0.binds` for Horizons) by specifying the full path to the file in the
 `bindings` value in the `[files]` section of `config.toml`, e.g.
@@ -123,3 +123,11 @@ bindings = 'C:\Users\DavidB\AppData\Local\Frontier Developments\Elite Dangerous\
 
 Important: Due to the way the TOML file format works, you should use single
 quote characters around the path (as shown above).
+
+# Contributors
+
+Many thanks to our contributors:
+
+* [andrewdsmith](https://github.com/andrewdsmith)
+* [speedyspikes](https://github.com/speedyspikes)
+* [midwan](https://github.com/midwan)
