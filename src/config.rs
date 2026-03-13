@@ -310,7 +310,7 @@ mod tests {
             night_vision: None,
             silent_running: None,
             mfd: None,
-      };
+        };
 
         let actual_mapper = config.status_level_to_mode_mapper(GlobalStatus::Normal);
         let expected_mapper = StatusLevelToModeMapper {
