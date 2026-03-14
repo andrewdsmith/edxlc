@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use libc::c_void;
 use libloading::{os::windows::Symbol, Library};
 use log::debug;
