@@ -59,6 +59,7 @@ pub struct DirectOutput {
     set_led_fn: Symbol<SetLedFn>,
     set_string_fn: Symbol<SetStringFn>,
     device: DeviceHandle,
+    plugin_name: Vec<u16>,
 }
 
 impl DirectOutput {
@@ -81,6 +82,7 @@ impl DirectOutput {
             set_led_fn,
             set_string_fn,
             device: std::ptr::null(),
+            plugin_name: Self::win32_string(PLUGIN_NAME),
         }
     }
 
@@ -110,7 +112,8 @@ impl DirectOutput {
     /// other methods can be called. Panics if the initialization fails.
     pub fn initialize(&self) {
         unsafe {
-            let result = (self.initialize_fn)(Self::win32_string(PLUGIN_NAME).as_ptr());
+            let result = (self.initialize_fn)(self.plugin_name.as_ptr());
+
             debug!("DirectOutput_Initialize result = {:?}", result);
 
             if result != 0 {
@@ -145,12 +148,11 @@ impl DirectOutput {
     /// multiple display pages that can be switched between but this wrapper
     /// creates a single page only. Panics if the addition fails.
     pub fn add_page(&self) {
-        // Despite what the SDK documentation says, we have to pass in a non-null debug
-        // name or later calls fail with an error indicating the page is not active.
-        let debug_name = Self::win32_string(PLUGIN_NAME).as_ptr();
-
         unsafe {
-            let result = (self.add_page_fn)(self.device, PAGE_ID, debug_name, FLAG_SET_AS_ACTIVE);
+            // Despite what the SDK documentation says, we have to pass in a
+            // non-null debug name or later calls fail with an error indicating
+            // the page is not active.
+            let result = (self.add_page_fn)(self.device, PAGE_ID, self.plugin_name.as_ptr(), FLAG_SET_AS_ACTIVE);
             debug!("DirectOutput_AddPage result = {:?}", result);
 
             if result != 0 {
