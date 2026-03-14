@@ -6,6 +6,8 @@
   preventing a crash on start with the default configuration
 - Supports alternative (optional) configuration when silent running is on
 - Supports setting the MFD text
+- Development: Upgraded all dependencies
+- Development: Upgraded to Rust 2024 edition
 
 ## Version 1.13
 

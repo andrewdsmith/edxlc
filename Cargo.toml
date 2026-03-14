@@ -2,7 +2,7 @@
 name = "edxlc"
 version = "1.14.0"
 authors = ["Andrew Smith"]
-edition = "2018"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

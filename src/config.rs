@@ -88,7 +88,7 @@ impl Config {
         optional_config: &'a Option<ModeConfig>,
     ) -> &'a ModeConfig {
         match optional_config {
-            Some(ref mode_config) => mode_config,
+            Some(mode_config) => mode_config,
             None => &self.default,
         }
     }
