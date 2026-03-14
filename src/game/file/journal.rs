@@ -18,8 +18,8 @@ pub fn watch_dir(dir_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::
         .watch(dir_path, move |event: hotwatch::Event| {
             debug!("Journal directory watch event: {:?}", event);
 
-            if let hotwatch::Event::Create(file_path) = event {
-                let file_name = file_path
+            if let hotwatch::EventKind::Create(_) = event.kind {
+                let file_name = event.paths[0]
                     .file_name()
                     .expect("Can't get file name for created file")
                     .to_str()
@@ -28,7 +28,7 @@ pub fn watch_dir(dir_path: PathBuf, watcher: &mut Hotwatch, tx: &Sender<events::
                 debug!("New file in journal directory: {}", file_name);
 
                 if file_name.starts_with("Journal") && file_name.ends_with(".log") {
-                    tx.send(events::Event::NewJournalFile(file_path))
+                    tx.send(events::Event::NewJournalFile(event.paths[0].clone()))
                         .expect("Can't send new journal file message");
                 }
             }

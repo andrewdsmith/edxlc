@@ -1,6 +1,6 @@
 use crate::game::StatusLevel;
 use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper, StatusLevelToModeMapper};
-use enum_iterator::IntoEnumIterator;
+use enum_iterator::{all, Sequence};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -113,7 +113,7 @@ impl Device {
         let mut light_highest_status_levels = HashMap::new();
 
         // Default all lights to inactive.
-        for light in Light::into_enum_iter() {
+        for light in all::<Light>() {
             light_highest_status_levels.insert(light, StatusLevel::Inactive);
         }
 
@@ -190,7 +190,7 @@ pub enum Input {
 }
 
 /// Controllable lights on the device, which have either one or two LEDs.
-#[derive(Copy, Clone, Debug, Eq, Hash, IntoEnumIterator, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Sequence)]
 enum Light {
     Clutch,
     Fire,

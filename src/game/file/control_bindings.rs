@@ -71,9 +71,9 @@ impl ControlBinding {
 /// A device input as stored in the game binding files.
 #[derive(Default, Deserialize, Debug, PartialEq)]
 pub struct Input {
-    #[serde(rename = "Device")]
+    #[serde(rename = "@Device")]
     pub device: String,
-    #[serde(rename = "Key")]
+    #[serde(rename = "@Key")]
     pub name: String,
 }
 

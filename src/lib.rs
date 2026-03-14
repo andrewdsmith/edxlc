@@ -57,9 +57,9 @@ pub fn run(config: Config) {
     journal::watch_dir(game::file::journal_dir_path(), &mut hotwatch, &tx);
 
     hotwatch
-        .watch(status_file_path, move |event: hotwatch::Event| {
-            if let hotwatch::Event::Write(path) = event {
-                if let Some(status) = Status::from_file(&path) {
+        .watch(status_file_path.clone(), move |event: hotwatch::Event| {
+            if let hotwatch::EventKind::Modify(_) = event.kind {
+                if let Some(status) = Status::from_file(&status_file_path) {
                     tx.send(Event::StatusUpdate(status))
                         .expect("Could not send status update message");
                 }
