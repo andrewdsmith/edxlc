@@ -1,6 +1,6 @@
 use crate::game::StatusLevel;
-use crate::x52pro::{direct_output::DirectOutput, LightModeToStateMapper, StatusLevelToModeMapper};
-use enum_iterator::{all, Sequence};
+use crate::x52pro::{LightModeToStateMapper, StatusLevelToModeMapper, direct_output::DirectOutput};
+use enum_iterator::{Sequence, all};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

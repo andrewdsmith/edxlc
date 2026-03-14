@@ -5,8 +5,8 @@ mod x52pro;
 
 use config::Config;
 use events::Event;
-use game::{file::journal, file::journal::JournalReader, file::Status};
 use game::{Attribute, Control, Controls, Ship};
+use game::{file::Status, file::journal, file::journal::JournalReader};
 use hotwatch::Hotwatch;
 use log::{debug, info};
 use std::sync::mpsc;
@@ -74,10 +74,12 @@ pub fn run(config: Config) {
     })
     .expect("Failed to set Ctrl+C handler");
 
-    thread::spawn(move || loop {
-        thread::sleep(Duration::from_millis(ANIMATION_TICK_MILLISECONDS));
-        tx3.send(Event::AnimationTick)
-            .expect("Could not send animation tick message");
+    thread::spawn(move || {
+        loop {
+            thread::sleep(Duration::from_millis(ANIMATION_TICK_MILLISECONDS));
+            tx3.send(Event::AnimationTick)
+                .expect("Could not send animation tick message");
+        }
     });
 
     for event in rx {

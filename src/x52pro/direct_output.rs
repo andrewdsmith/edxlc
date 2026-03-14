@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use libc::c_void;
-use libloading::{os::windows::Symbol, Library};
+use libloading::{Library, os::windows::Symbol};
 use log::debug;
 use std::ffi::OsStr;
 use std::iter::once;
@@ -9,8 +9,8 @@ use std::os::windows::ffi::OsStrExt;
 use winapi::ctypes::wchar_t;
 use winapi::shared::minwindef::DWORD;
 use winapi::um::winnt::HRESULT;
-use winreg::enums::HKEY_LOCAL_MACHINE;
 use winreg::RegKey;
+use winreg::enums::HKEY_LOCAL_MACHINE;
 
 type DeviceHandle = *const c_void;
 
@@ -152,7 +152,12 @@ impl DirectOutput {
             // Despite what the SDK documentation says, we have to pass in a
             // non-null debug name or later calls fail with an error indicating
             // the page is not active.
-            let result = (self.add_page_fn)(self.device, PAGE_ID, self.plugin_name.as_ptr(), FLAG_SET_AS_ACTIVE);
+            let result = (self.add_page_fn)(
+                self.device,
+                PAGE_ID,
+                self.plugin_name.as_ptr(),
+                FLAG_SET_AS_ACTIVE,
+            );
             debug!("DirectOutput_AddPage result = {:?}", result);
 
             if result != 0 {

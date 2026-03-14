@@ -1,4 +1,4 @@
-use super::file::{journal::Event, LegalState, Status as FileStatus};
+use super::file::{LegalState, Status as FileStatus, journal::Event};
 use log::{info, warn};
 
 type StatusBitField = u64;

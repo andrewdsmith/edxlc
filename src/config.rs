@@ -1,7 +1,7 @@
 use crate::game::GlobalStatus;
 use crate::x52pro::{
-    device::{BooleanLightMode, LightMode, RedAmberGreenLightMode},
     StatusLevelToModeMapper,
+    device::{BooleanLightMode, LightMode, RedAmberGreenLightMode},
 };
 use log::info;
 use serde::{Deserialize, Serialize};
